@@ -1,4 +1,4 @@
-from dotenv import load_dotenv
+from dotenv import dotenv_values, load_dotenv
 import pandas as pd
 from PySide6 import QtCore
 
@@ -18,11 +18,14 @@ class Workspace(QtCore.QObject):
 
     def __init__(self, settings=None):
         super().__init__()
-        self.settings = settings or Settings.load()
-        self.settings.data_dir.mkdir(parents=True, exist_ok=True)
-        load_dotenv(self.settings.data_dir / ".desktop.env", override=False)
-        loaded = Settings.load()
-        self.settings = Settings(self.settings.data_dir, loaded.backend, loaded.endpoint, loaded.model, loaded.service_url, loaded.service_token)
+        base = settings or Settings.load()
+        base.data_dir.mkdir(parents=True, exist_ok=True)
+        config_path = base.data_dir / ".desktop.env"
+        local = dotenv_values(config_path)
+        load_dotenv(config_path, override=False)
+        self.settings = Settings(base.data_dir, local.get("MATRIX_BACKEND", base.backend),
+                                 local.get("MATRIX_API_ENDPOINT", base.endpoint), local.get("MATRIX_API_MODEL", base.model),
+                                 local.get("MATRIX_JEVDB_SERVICE_URL", base.service_url), local.get("MATRIX_JEVDB_SERVICE_TOKEN", base.service_token))
         self.prices = pd.DataFrame()
         self.documents = pd.DataFrame(columns=DOC_COLUMNS)
         self.symbol = ""

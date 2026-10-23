@@ -139,7 +139,7 @@ class PortfolioPage(QtWidgets.QWidget):
         self.heat = pg.PlotWidget()
         self.heat.setMenuEnabled(False)
         self.heat.hideButtons()
-        self.heat.setAspectLocked()
+        self.heat.setAspectLocked(False)
         self.heat.setMouseEnabled(False, False)
         heat_box.addWidget(self.heat)
         self.diagnostics = label("Gram矩阵 / 半正定性 / 协方差收缩", "muted")

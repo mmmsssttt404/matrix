@@ -73,3 +73,18 @@ def test_native_empty_workspace_uses_real_data_actions(tmp_path, monkeypatch, qt
     assert window.empty.isVisible()
     assert not window.chart.isVisible()
     assert window.watch.frame_model.rowCount() == 0
+
+
+def test_workspace_service_configuration_is_not_taken_from_another_window(tmp_path, monkeypatch, qapp):
+    from matrixlab.desktop.workspace import Workspace
+
+    monkeypatch.setenv("MATRIX_JEVDB_SERVICE_URL", "https://process-default.example")
+    for name in ["first", "second"]:
+        directory = tmp_path / name
+        directory.mkdir()
+        (directory / ".desktop.env").write_text(f"MATRIX_JEVDB_SERVICE_URL=https://{name}.example\nMATRIX_JEVDB_SERVICE_TOKEN={name}-token\n")
+    first = Workspace(Settings(tmp_path / "first", "jev", "", ""))
+    second = Workspace(Settings(tmp_path / "second", "jev", "", ""))
+    assert first.settings.service_url == "https://first.example"
+    assert second.settings.service_url == "https://second.example"
+    assert second.settings.service_token == "second-token"
