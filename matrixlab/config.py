@@ -13,6 +13,8 @@ class Settings:
     backend: str
     endpoint: str
     model: str
+    service_url: str = ""
+    service_token: str = ""
 
     @classmethod
     def load(cls):
@@ -22,6 +24,8 @@ class Settings:
             os.getenv("MATRIX_BACKEND", "jev"),
             os.getenv("MATRIX_API_ENDPOINT", ""),
             os.getenv("MATRIX_API_MODEL", ""),
+            os.getenv("MATRIX_JEVDB_SERVICE_URL", ""),
+            os.getenv("MATRIX_JEVDB_SERVICE_TOKEN", ""),
         )
 
     @property

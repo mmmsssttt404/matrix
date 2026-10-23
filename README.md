@@ -2,9 +2,11 @@
 
 本项目选择题目二：基于JEVDB的股票研究与模拟交易软件。
 
-**当前阶段：可运行原型。** 已实现真实行情获取、资料筛选、矩阵风险计算、样本外比较及模拟交易。模型API按用户决定稍后配置；离线关键词结果有独立标识。
+**当前阶段：Windows桌面版。** Qt原生窗口提供自选股、K线、公司研究、矩阵组合和模拟交易。模型API按用户决定稍后配置；离线关键词结果有独立标识。
 
 - [方案简报：范围、软件、存储和验收](docs/proposal.md)
+- [Windows启动与使用](docs/windows.md)
+- [桌面排布与GitHub代码参考](docs/desktop-design.md)
 - [运行说明与演示步骤](docs/runbook.md)
 - [项目报告、方法与验证边界](docs/report.md)
 - [工具职责、权限与许可](docs/tools.md)
@@ -15,16 +17,16 @@
 
 ```bash
 python3 -m venv .venv
-.venv/bin/python -m pip install -r requirements.lock
+.venv/bin/python -m pip install -r requirements-desktop.lock
 .venv/bin/python -m matrixlab.cli doctor
 .venv/bin/python -m matrixlab.cli fetch
 .venv/bin/python -m matrixlab.cli archive --asof 2024-12-31
-.venv/bin/streamlit run app.py
+.venv/bin/python -m matrixlab.desktop
 ```
 
-支持Linux x86-64、Python3.12及以上；当前锁定环境实测为Python3.13。下载需要网络；已有本地CSV后，矩阵分析和模拟交易可离线运行。真实JEVDB语义判断需要模型API凭证。
+上面的源码启动命令用于Linux x86-64、Python3.13。Windows用户解压构建包后运行`MatrixWorkbench.exe`；源码使用`requirements-windows.lock`。下载需要网络，已有本地CSV后数值计算与模拟交易可离线运行。Windows的真实JEVDB查询通过Linux语义服务连接。
 
-![矩阵分析界面](docs/images/prototype.png)
+![原生股票工作台](docs/images/desktop-workbench.png)
 
 协作采用功能分支和Pull Request；原始数据、密钥、虚拟环境及大体积产物保留本地。`requirements.lock`保存完整实测依赖版本。测试：`.venv/bin/python -m pytest -q`。
 

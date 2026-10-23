@@ -6,7 +6,6 @@ from pathlib import Path
 import time
 from uuid import uuid4
 
-import jevdb
 import pandas as pd
 import pyarrow as pa
 
@@ -45,6 +44,10 @@ class ResearchRun:
 
 
 def inspect_backend():
+    try:
+        import jevdb
+    except ImportError as exc:
+        raise ResearchUnavailable("此平台没有JEVDB原生扩展；Windows桌面端可配置Linux语义服务地址。") from exc
     with jevdb.connect() as connection:
         functions = connection.execute("SELECT DISTINCT function_name FROM duckdb_functions() WHERE function_name LIKE 'jev_%' ORDER BY 1").fetchall()
         return {"jevdb": jevdb.__version__, "functions": [row[0] for row in functions]}
@@ -70,10 +73,16 @@ def screen(documents, query, asof, settings, mode="keyword", max_documents=100):
         matches = eligible.loc[mask]
         backend = "keyword_baseline"
     elif mode == "jevdb":
+        if settings.service_url:
+            return _remote_screen(eligible, query, asof, settings, max_documents)
         if settings.backend not in {"jev", "llm"}:
             raise ResearchUnavailable("MATRIX_BACKEND须为jev或llm。")
         if not settings.credential_available:
             raise ResearchUnavailable("未配置模型API密钥。请在本地.env配置后重试，或明确选择离线关键词基线。")
+        try:
+            import jevdb
+        except ImportError as exc:
+            raise ResearchUnavailable("Windows语义查询需要Linux上的JEVDB服务，请在连接设置中填写地址；离线关键词模式可直接使用。") from exc
         if settings.backend == "llm" and (not settings.endpoint or not settings.model):
             raise ResearchUnavailable("兼容API还需要MATRIX_API_ENDPOINT与MATRIX_API_MODEL。")
         try:
@@ -107,3 +116,31 @@ def screen(documents, query, asof, settings, mode="keyword", max_documents=100):
     records = json.loads(matches.to_json(orient="records", date_format="iso"))
     return ResearchRun(str(uuid4()), backend, query, str(pd.Timestamp(asof).date()), len(eligible),
                        round(time.perf_counter() - start, 4), records, datetime.now(timezone.utc).isoformat(), stats)
+
+
+def _remote_screen(eligible, query, asof, settings, limit):
+    from urllib.parse import urlparse
+    from urllib.request import Request, urlopen
+    from uuid import UUID
+
+    parsed = urlparse(settings.service_url)
+    if parsed.scheme != "https" and not (parsed.scheme == "http" and parsed.hostname in {"localhost", "127.0.0.1", "::1"}):
+        raise ResearchUnavailable("远程语义服务须使用HTTPS；本机回环地址可使用HTTP。")
+    if not settings.service_token:
+        raise ResearchUnavailable("请配置语义服务访问令牌。")
+    body = {"documents": json.loads(eligible.to_json(orient="records", date_format="iso")),
+            "query": query, "asof": str(pd.Timestamp(asof).date()), "max_documents": limit}
+    request = Request(settings.service_url.rstrip("/") + "/research", data=json.dumps(body).encode(),
+                      headers={"Content-Type": "application/json", "Authorization": "Bearer " + settings.service_token})
+    try:
+        with urlopen(request, timeout=90) as response:
+            payload = json.load(response)
+        run = ResearchRun(**payload)
+        UUID(run.run_id)
+        if run.query != query or run.asof != body["asof"] or not run.backend.startswith("jevdb_"):
+            raise ValueError("Mismatched research response")
+        if not {r["doc_id"] for r in run.matches} <= set(eligible.doc_id):
+            raise ValueError("Unknown evidence returned by service")
+        return run
+    except Exception as exc:
+        raise ResearchUnavailable("语义服务请求失败，请检查地址、令牌及服务端模型配置。没有返回替代语义结果。") from exc

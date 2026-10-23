@@ -22,6 +22,7 @@ def test_no_key_never_returns_fabricated_semantics(documents, tmp_path, monkeypa
 
 
 def test_real_jevdb_binary_loads_without_model_calls():
+    pytest.importorskip("jevdb")
     info = inspect_backend()
     assert info["jevdb"] == "0.1.0"
     assert {"jev_holds", "jev_choose", "jev_score"} <= set(info["functions"])
@@ -47,6 +48,7 @@ def test_real_jevdb_sql_and_transport_with_local_test_service(documents, tmp_pat
     Protocol reference: PDAIS/JEVDB tools/standin/jev_standin.py (MIT).
     """
     import json
+    pytest.importorskip("jevdb")
     from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
     from threading import Thread
 
