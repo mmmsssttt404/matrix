@@ -194,12 +194,12 @@ class PortfolioPage(QtWidgets.QWidget):
         image.setLookupTable(colors.getLookupTable())
         image.setLevels((float(matrix.min()), float(matrix.max())))
         self.heat.addItem(image)
-        ticks = [(i + .5, str(s)) for i, s in enumerate(risk.weights.index)]
+        self.heat.getAxis("left").setTicks([[(i + .5, f"{i+1} {s}") for i, s in enumerate(risk.weights.index)]])
+        self.heat.getAxis("bottom").setTicks([[(i + .5, str(i + 1)) for i in range(len(risk.weights))]])
         for side in ["left", "bottom"]:
-            self.heat.getAxis(side).setTicks([ticks])
             self.heat.getAxis(side).setStyle(tickFont=pg.QtGui.QFont("Arial", 8))
         self.heat.autoRange()
-        self.diagnostics.setText(f"条件数 {risk.condition_before:.2f} → {risk.condition_after:.2f}    最小特征值 {risk.eigenvalues.min():.4f}")
+        self.diagnostics.setText(f"行列按公司序号对应 · 条件数 {risk.condition_before:.2f} → {risk.condition_after:.2f}\n最小特征值 {risk.eigenvalues.min():.4f}")
         try:
             curve = holdout_curve(self.workspace.prices, risk.weights, day)
             self.curve.set_frame(curve)
