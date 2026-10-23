@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "matrix-research-lab"
+version = "0.1.0"
+description = "JEVDB stock research, matrix risk analysis and educational paper trading"
+requires-python = ">=3.12"
+dependencies = [
+  "jevdb==0.1.0", "duckdb==1.4.3", "streamlit>=1.50,<2",
+  "numpy>=2.2,<3", "pandas>=2.2,<4", "scipy>=1.15,<2",
+  "plotly>=6,<8", "yfinance>=0.2.65,<2", "python-dotenv>=1,<2", "pyarrow>=18,<27",
+  "beautifulsoup4>=4.12,<5",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10", "playwright>=1.50,<2"]
+
+[project.scripts]
+matrixlab = "matrixlab.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["matrixlab*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
