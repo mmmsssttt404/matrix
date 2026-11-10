@@ -1,0 +1,44 @@
+name: Windows desktop
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    env:
+      QT_QPA_PLATFORM: offscreen
+      PYQTGRAPH_QT_LIB: PySide6
+    steps:
+      - uses: actions/checkout@v7
+      - run: New-Item -ItemType Directory -Force .cache/tmp
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - run: python -m pip install -r requirements-windows.lock
+        env:
+          TEMP: ${{ github.workspace }}\.cache\tmp
+          TMP: ${{ github.workspace }}\.cache\tmp
+      - run: python -m pip check
+      - run: python -m pytest -q
+      - name: Build native Windows executable
+        run: python -m PyInstaller packaging/MatrixWorkbench.spec --workpath .cache/windows-build
+        env:
+          TEMP: ${{ github.workspace }}\.cache\tmp
+          TMP: ${{ github.workspace }}\.cache\tmp
+      - name: Check the actual executable
+        run: python packaging/windows_smoke.py
+      - name: Include launcher and startup instructions
+        shell: pwsh
+        run: |
+          Copy-Item packaging/start-windows.cmd dist/MatrixWorkbench/
+          Copy-Item docs/windows.md dist/MatrixWorkbench/README-Windows.md
+          Copy-Item THIRD_PARTY_NOTICES.md dist/MatrixWorkbench/
+          Copy-Item .cache/frozen-check.json dist/MatrixWorkbench/build-check.json
+      - uses: actions/upload-artifact@v7
+        with:
+          name: MatrixWorkbench-Windows-x64
+          path: dist/MatrixWorkbench/
+          retention-days: 30

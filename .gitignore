@@ -20,6 +20,7 @@ __pycache__/
 # Credentials and local configuration
 .env
 .env.*
+.desktop.env
 !.env.example
 .streamlit/secrets.toml
 *.pem

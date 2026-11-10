@@ -2,13 +2,32 @@
 
 本项目选择题目二：基于JEVDB的股票研究与模拟交易软件。
 
-**当前阶段：方案待review。** 目前仅整理要求、技术选型和资源预算；收到用户的review意见后再开发原型、安装项目依赖和接入模型API。
+**当前阶段：Windows桌面版。** Qt原生窗口提供自选股、K线、公司研究、矩阵组合和模拟交易。模型API按用户决定稍后配置；离线关键词结果有独立标识。
 
 - [方案简报：范围、软件、存储和验收](docs/proposal.md)
+- [Windows启动与使用](docs/windows.md)
+- [桌面排布与GitHub代码参考](docs/desktop-design.md)
+- [运行说明与演示步骤](docs/runbook.md)
+- [项目报告、方法与验证边界](docs/report.md)
+- [工具职责、权限与许可](docs/tools.md)
+- [成员贡献记录模板](docs/contributions.md)
 - 本地作业要求：`materials/assignment-requirements.pdf`，该目录不提交到公开仓库。
 
-拟实现的核心流程：用户提出筛选条件→JEVDB查询公司资料→矩阵方法分析组合风险→模拟下单→展示持仓、净值与可追溯依据。
+核心流程：用户提出筛选条件→JEVDB查询或明确标记的离线关键词筛选→矩阵方法分析组合风险→模拟下单→展示持仓、净值与可追溯依据。
 
-后续协作采用功能分支和Pull Request。开发时补充运行说明、依赖版本、数据获取说明、成员贡献和验证记录；原始数据、密钥、虚拟环境及大体积产物保留在本地。
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements-desktop.lock
+.venv/bin/python -m matrixlab.cli doctor
+.venv/bin/python -m matrixlab.cli fetch
+.venv/bin/python -m matrixlab.cli archive --asof 2024-12-31
+.venv/bin/python -m matrixlab.desktop
+```
+
+上面的源码启动命令用于Linux x86-64、Python3.13。Windows用户解压构建包后运行`MatrixWorkbench.exe`；源码使用`requirements-windows.lock`。下载需要网络，已有本地CSV后数值计算与模拟交易可离线运行。Windows的真实JEVDB查询通过Linux语义服务连接。
+
+![原生股票工作台](docs/images/desktop-workbench.png)
+
+协作采用功能分支和Pull Request；原始数据、密钥、虚拟环境及大体积产物保留本地。`requirements.lock`保存完整实测依赖版本。测试：`.venv/bin/python -m pytest -q`。
 
 参考：[JEVDB作者仓库](https://github.com/PDAIS/JEVDB)、[题目对应论文](https://arxiv.org/abs/2610.02046v1)。

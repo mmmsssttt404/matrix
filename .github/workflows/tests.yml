@@ -1,0 +1,27 @@
+name: tests
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    env:
+      QT_QPA_PLATFORM: offscreen
+      PYQTGRAPH_QT_LIB: PySide6
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Install Qt headless runtime
+        run: sudo apt-get update && sudo apt-get install -y libegl1 libopengl0
+      - run: mkdir -p .cache/tmp
+      - run: python -m pip install -r requirements-desktop.lock
+        env:
+          TMPDIR: ${{ github.workspace }}/.cache/tmp
+      - run: python -m pip check
+      - run: python -m pytest -q
+        env:
+          TMPDIR: ${{ github.workspace }}/.cache/tmp
