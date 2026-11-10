@@ -4,6 +4,10 @@
 
 **当前阶段：Windows桌面版。** Qt原生窗口提供自选股、K线、公司研究、矩阵组合和模拟交易。模型API按用户决定稍后配置；离线关键词结果有独立标识。
 
+**Windows下载：[v0.1.0便携包](https://github.com/mmmsssttt404/matrix/releases/download/v0.1.0/MatrixWorkbench-Windows-x64-v0.1.0.zip)** · [Releases版本页](https://github.com/mmmsssttt404/matrix/releases/latest)
+
+完整解压后双击`MatrixWorkbench.exe`，保留同目录的`_internal`文件夹，无需安装Python。
+
 - [方案简报：范围、软件、存储和验收](docs/proposal.md)
 - [Windows启动与使用](docs/windows.md)
 - [桌面排布与GitHub代码参考](docs/desktop-design.md)
@@ -28,6 +32,6 @@ python3 -m venv .venv
 
 ![原生股票工作台](docs/images/desktop-workbench.png)
 
-协作采用功能分支和Pull Request；原始数据、密钥、虚拟环境及大体积产物保留本地。`requirements.lock`保存完整实测依赖版本。测试：`.venv/bin/python -m pytest -q`。
+源码与项目文档统一维护在`main`分支，Windows可执行包通过GitHub Releases提供；原始数据、密钥和虚拟环境保留本地。`requirements.lock`保存完整实测依赖版本。测试：`.venv/bin/python -m pytest -q`。
 
 参考：[JEVDB作者仓库](https://github.com/PDAIS/JEVDB)、[题目对应论文](https://arxiv.org/abs/2610.02046v1)。
