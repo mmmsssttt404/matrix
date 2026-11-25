@@ -1,0 +1,679 @@
+{
+  "generated_at": "2026-11-25T01:30:06.773939+00:00",
+  "asof": "2026-11-25",
+  "documents": "evaluation\\documents.csv",
+  "labels": "evaluation\\labels.csv",
+  "results": {
+    "keyword": {
+      "mode": "keyword",
+      "operator": "all",
+      "summary": {
+        "queries": 40,
+        "scored": 40,
+        "errors": 0,
+        "macro_precision": 0.85,
+        "macro_recall": 0.7688,
+        "macro_f1": 0.7925,
+        "mrr": 0.85,
+        "exact_match_rate": 0.7,
+        "micro_precision": 1.0,
+        "micro_recall": 0.623
+      },
+      "queries": [
+        {
+          "query": "cloud computing",
+          "relevant": [
+            "AMZN",
+            "GOOGL",
+            "MSFT"
+          ],
+          "notes": "Azure, AWS and Google Cloud are direct competitors",
+          "error": null,
+          "matched": [
+            "MSFT",
+            "GOOGL",
+            "AMZN"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "enterprise software",
+          "relevant": [
+            "MSFT"
+          ],
+          "notes": "Office and enterprise productivity suite",
+          "error": null,
+          "matched": [
+            "MSFT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "AI chips",
+          "relevant": [
+            "NVDA"
+          ],
+          "notes": "GPU and accelerated computing for AI",
+          "error": null,
+          "matched": [
+            "NVDA"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "graphics processors",
+          "relevant": [
+            "NVDA"
+          ],
+          "notes": "Core GPU product line",
+          "error": null,
+          "matched": [],
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_match": false
+        },
+        {
+          "query": "online retail",
+          "relevant": [
+            "AMZN",
+            "WMT"
+          ],
+          "notes": "E-commerce and retail operations",
+          "error": null,
+          "matched": [
+            "AMZN"
+          ],
+          "precision": 1.0,
+          "recall": 0.5,
+          "f1": 0.6667,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "e-commerce",
+          "relevant": [
+            "AMZN",
+            "WMT"
+          ],
+          "notes": "Online marketplace and e-commerce retail",
+          "error": null,
+          "matched": [
+            "WMT"
+          ],
+          "precision": 1.0,
+          "recall": 0.5,
+          "f1": 0.6667,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "social media advertising",
+          "relevant": [
+            "META"
+          ],
+          "notes": "Revenue is mainly social media advertising",
+          "error": null,
+          "matched": [
+            "META"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "digital advertising",
+          "relevant": [
+            "AMZN",
+            "GOOGL",
+            "META"
+          ],
+          "notes": "Search, social and retail media advertising",
+          "error": null,
+          "matched": [
+            "META",
+            "GOOGL"
+          ],
+          "precision": 1.0,
+          "recall": 0.6667,
+          "f1": 0.8,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "search engine",
+          "relevant": [
+            "GOOGL"
+          ],
+          "notes": "Google Search is the core product",
+          "error": null,
+          "matched": [],
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_match": false
+        },
+        {
+          "query": "investment banking",
+          "relevant": [
+            "JPM"
+          ],
+          "notes": "Investment banking division",
+          "error": null,
+          "matched": [
+            "JPM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "consumer banking",
+          "relevant": [
+            "JPM"
+          ],
+          "notes": "Consumer and community banking",
+          "error": null,
+          "matched": [
+            "JPM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "credit cards",
+          "relevant": [
+            "JPM"
+          ],
+          "notes": "Card issuing and payments",
+          "error": null,
+          "matched": [
+            "JPM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "mortgage lending",
+          "relevant": [
+            "JPM"
+          ],
+          "notes": "Mortgage products",
+          "error": null,
+          "matched": [
+            "JPM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "pharmaceuticals",
+          "relevant": [
+            "JNJ"
+          ],
+          "notes": "Prescription medicines",
+          "error": null,
+          "matched": [
+            "JNJ"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "medical devices",
+          "relevant": [
+            "JNJ"
+          ],
+          "notes": "Surgical and medical technology",
+          "error": null,
+          "matched": [
+            "JNJ"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "consumer health products",
+          "relevant": [
+            "JNJ"
+          ],
+          "notes": "Over-the-counter consumer health",
+          "error": null,
+          "matched": [
+            "JNJ"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "oil and gas",
+          "relevant": [
+            "XOM"
+          ],
+          "notes": "Upstream exploration and production",
+          "error": null,
+          "matched": [
+            "XOM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "refining",
+          "relevant": [
+            "XOM"
+          ],
+          "notes": "Downstream refining operations",
+          "error": null,
+          "matched": [
+            "XOM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "household products",
+          "relevant": [
+            "PG",
+            "WMT"
+          ],
+          "notes": "Manufacturers and retailers of household products",
+          "error": null,
+          "matched": [
+            "PG",
+            "WMT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "personal care",
+          "relevant": [
+            "PG"
+          ],
+          "notes": "Shampoo and personal care brands",
+          "error": null,
+          "matched": [
+            "PG"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "soft drinks",
+          "relevant": [
+            "KO"
+          ],
+          "notes": "Carbonated beverage portfolio",
+          "error": null,
+          "matched": [
+            "KO"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "bottled water",
+          "relevant": [
+            "KO"
+          ],
+          "notes": "Dasani and bottled water",
+          "error": null,
+          "matched": [
+            "KO"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "grocery retail",
+          "relevant": [
+            "WMT"
+          ],
+          "notes": "Grocery and supercenter retail",
+          "error": null,
+          "matched": [
+            "WMT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "discount stores",
+          "relevant": [
+            "WMT"
+          ],
+          "notes": "Discount retail format",
+          "error": null,
+          "matched": [
+            "WMT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "smartphones",
+          "relevant": [
+            "AAPL"
+          ],
+          "notes": "iPhone product line",
+          "error": null,
+          "matched": [
+            "AAPL"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "wearables",
+          "relevant": [
+            "AAPL"
+          ],
+          "notes": "Apple Watch and wearable devices",
+          "error": null,
+          "matched": [
+            "AAPL"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "personal computers",
+          "relevant": [
+            "AAPL"
+          ],
+          "notes": "Mac personal computers",
+          "error": null,
+          "matched": [
+            "AAPL"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "streaming video",
+          "relevant": [
+            "AMZN",
+            "GOOGL"
+          ],
+          "notes": "YouTube and Prime Video",
+          "error": null,
+          "matched": [
+            "GOOGL"
+          ],
+          "precision": 1.0,
+          "recall": 0.5,
+          "f1": 0.6667,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "data centers",
+          "relevant": [
+            "AMZN",
+            "GOOGL",
+            "MSFT",
+            "NVDA"
+          ],
+          "notes": "AI accelerators and cloud data center infrastructure",
+          "error": null,
+          "matched": [
+            "NVDA"
+          ],
+          "precision": 1.0,
+          "recall": 0.25,
+          "f1": 0.4,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "virtual reality",
+          "relevant": [
+            "META"
+          ],
+          "notes": "VR hardware and platforms",
+          "error": null,
+          "matched": [
+            "META"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "digital payments",
+          "relevant": [
+            "JPM"
+          ],
+          "notes": "Card and payment services",
+          "error": null,
+          "matched": [],
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_match": false
+        },
+        {
+          "query": "asset management",
+          "relevant": [
+            "JPM"
+          ],
+          "notes": "Asset and wealth management",
+          "error": null,
+          "matched": [
+            "JPM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "low-carbon energy",
+          "relevant": [
+            "XOM"
+          ],
+          "notes": "Low-carbon energy investments",
+          "error": null,
+          "matched": [
+            "XOM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "paper products",
+          "relevant": [
+            "PG"
+          ],
+          "notes": "Paper and household products",
+          "error": null,
+          "matched": [
+            "PG"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "juice and beverages",
+          "relevant": [
+            "KO"
+          ],
+          "notes": "Juice and beverage portfolio",
+          "error": null,
+          "matched": [
+            "KO"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "warehouse clubs",
+          "relevant": [
+            "WMT"
+          ],
+          "notes": "Sam's Club warehouse format",
+          "error": null,
+          "matched": [
+            "WMT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "technology mega-caps",
+          "relevant": [
+            "AAPL",
+            "AMZN",
+            "GOOGL",
+            "META",
+            "MSFT",
+            "NVDA"
+          ],
+          "notes": "Large-cap technology platforms",
+          "error": null,
+          "matched": [],
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_match": false
+        },
+        {
+          "query": "consumer staples",
+          "relevant": [
+            "JNJ",
+            "KO",
+            "PG",
+            "WMT"
+          ],
+          "notes": "Everyday consumer and health products",
+          "error": null,
+          "matched": [],
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_match": false
+        },
+        {
+          "query": "semiconductor accelerators",
+          "relevant": [
+            "NVDA"
+          ],
+          "notes": "Data center and AI accelerators",
+          "error": null,
+          "matched": [],
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_match": false
+        },
+        {
+          "query": "operating systems",
+          "relevant": [
+            "AAPL",
+            "GOOGL",
+            "MSFT"
+          ],
+          "notes": "iOS macOS Windows and Android",
+          "error": null,
+          "matched": [
+            "GOOGL"
+          ],
+          "precision": 1.0,
+          "recall": 0.3333,
+          "f1": 0.5,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        }
+      ]
+    }
+  }
+}

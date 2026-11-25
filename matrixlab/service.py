@@ -51,7 +51,8 @@ def make_server(host, port, settings=None, token=None):
                 if not isinstance(body["documents"], list) or len(body["documents"]) > 200:
                     raise DataError("最多200条资料。")
                 docs = validate_documents(pd.DataFrame(body["documents"]))
-                run = screen(docs, str(body["query"]), body["asof"], settings, "jevdb", int(body.get("max_documents", 100)))
+                run = screen(docs, str(body["query"]), body["asof"], settings, "jevdb",
+                             int(body.get("max_documents", 100)), str(body.get("operator", "all")))
                 self.reply(200, asdict(run))
             except ResearchUnavailable:
                 self.reply(503, {"error": "model service unavailable"})

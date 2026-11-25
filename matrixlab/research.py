@@ -2,7 +2,9 @@
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 import json
+import math
 from pathlib import Path
+import re
 import time
 from uuid import uuid4
 
@@ -20,6 +22,107 @@ def _literal(value):
     return "'" + str(value).replace("'", "''") + "'"
 
 
+_WORD = re.compile(r"[a-z0-9]+")
+_CJK = re.compile(r"[\u3400-\u9fff]+")
+_PHRASE = re.compile(r'"([^"]+)"|“([^”]+)”')
+_STOPWORDS = {
+    "a", "an", "and", "are", "as", "at", "be", "been", "but", "by", "for", "from",
+    "has", "have", "in", "into", "is", "it", "its", "of", "on", "or", "our", "over",
+    "such", "than", "that", "the", "their", "then", "these", "they", "this", "to",
+    "under", "via", "was", "we", "were", "which", "with", "you", "your",
+}
+
+
+def _stem(token):
+    if len(token) > 4 and token.endswith("ies"):
+        return token[:-3] + "y"
+    if len(token) > 3 and token.endswith("s") and not token.endswith("ss"):
+        return token[:-1]
+    return token
+
+
+def tokenize(text):
+    """Case-fold, drop English stopwords, and use CJK bigrams for unspaced text."""
+    text = str(text).casefold()
+    tokens = []
+    for match in _WORD.finditer(text):
+        token = match.group(0)
+        if (len(token) > 1 or token.isdigit()) and token not in _STOPWORDS:
+            tokens.append(_stem(token))
+    for sequence in _CJK.findall(text):
+        if len(sequence) == 1:
+            tokens.append(sequence)
+        else:
+            tokens.extend(sequence[i:i + 2] for i in range(len(sequence) - 1))
+    return tokens
+
+
+def parse_query(query):
+    phrases = []
+    for match in _PHRASE.finditer(query):
+        phrase = (match.group(1) or match.group(2) or "").strip().casefold()
+        if phrase:
+            phrases.append(phrase)
+    remainder = _PHRASE.sub(" ", query)
+    terms = list(dict.fromkeys(tokenize(remainder)))
+    return phrases, terms
+
+
+def _bm25_scores(documents, terms, k1=1.5, b=0.75):
+    tokenized = [tokenize(str(title) + " " + str(text))
+                 for title, text in zip(documents.title, documents.text)]
+    count = len(tokenized)
+    average_length = sum(map(len, tokenized)) / count if count else 0.0
+    frequencies = {}
+    for tokens in tokenized:
+        for term in set(tokens):
+            frequencies[term] = frequencies.get(term, 0) + 1
+    idf = {term: math.log(1 + (count - frequencies.get(term, 0) + 0.5)
+                          / (frequencies.get(term, 0) + 0.5)) for term in terms}
+    scores = []
+    for tokens in tokenized:
+        local = {}
+        for token in tokens:
+            local[token] = local.get(token, 0) + 1
+        score = 0.0
+        for term in terms:
+            frequency = local.get(term, 0)
+            if frequency and average_length:
+                denominator = frequency + k1 * (1 - b + b * len(tokens) / average_length)
+                score += idf[term] * frequency * (k1 + 1) / denominator
+        scores.append(score)
+    return scores
+
+
+def _keyword_screen(eligible, query, operator):
+    phrases, terms = parse_query(query)
+    if not phrases and not terms:
+        raise DataError("筛选条件至少需要一个检索词或短语。")
+    texts = (eligible.title.astype(str) + " " + eligible.text.astype(str)).str.casefold()
+    token_sets = [set(tokenize(text)) for text in texts]
+    hits = [texts.str.contains(phrase, regex=False) for phrase in phrases]
+    hits += [pd.Series([term in tokens for tokens in token_sets], index=eligible.index)
+             for term in terms]
+    if operator == "all":
+        mask = pd.Series(True, index=eligible.index)
+        for hit in hits:
+            mask &= hit
+    else:
+        mask = pd.Series(False, index=eligible.index)
+        for hit in hits:
+            mask |= hit
+    matched = eligible.loc[mask].copy()
+    if matched.empty:
+        return matched
+    matched["match_score"] = _bm25_scores(matched, terms) if terms else 0.0
+    if phrases:
+        bonus = sum(texts.loc[matched.index].apply(lambda text: text.count(phrase))
+                    for phrase in phrases)
+        matched["match_score"] = matched["match_score"] + bonus.astype(float)
+    matched["match_score"] = matched["match_score"].astype(float).round(6)
+    return matched.sort_values(["match_score", "available_at"], ascending=[False, False]).reset_index(drop=True)
+
+
 @dataclass
 class ResearchRun:
     run_id: str
@@ -31,6 +134,7 @@ class ResearchRun:
     matches: list
     created_at: str
     stats: list
+    operator: str = "all"
 
     def save(self, directory):
         directory = Path(directory)
@@ -53,28 +157,25 @@ def inspect_backend():
         return {"jevdb": jevdb.__version__, "functions": [row[0] for row in functions]}
 
 
-def screen(documents, query, asof, settings, mode="keyword", max_documents=100):
+def screen(documents, query, asof, settings, mode="keyword", max_documents=100, operator="all"):
     query = query.strip()
     if not query or len(query) > 1000:
         raise DataError("筛选条件须为1—1000字符。")
     if not 1 <= max_documents <= 200:
         raise DataError("每次最多处理1—200条资料。")
+    if operator not in {"all", "any"}:
+        raise DataError("关键词匹配方式须为all或any。")
     eligible = documents.loc[documents.available_at < cutoff_utc(asof)].sort_values("available_at", ascending=False).head(max_documents).copy()
     if eligible.empty:
         raise DataError("研究日期之前没有可用资料；不能将当前公司简介当作历史资料。")
     start = time.perf_counter()
     stats = []
     if mode == "keyword":
-        text = (eligible.title + " " + eligible.text).str.casefold()
-        terms = query.casefold().split()
-        mask = pd.Series(False, index=eligible.index)
-        for term in terms:
-            mask |= text.str.contains(term, regex=False)
-        matches = eligible.loc[mask]
-        backend = "keyword_baseline"
+        matches = _keyword_screen(eligible, query, operator)
+        backend = "keyword_bm25"
     elif mode == "jevdb":
         if settings.service_url:
-            return _remote_screen(eligible, query, asof, settings, max_documents)
+            return _remote_screen(eligible, query, asof, settings, max_documents, operator)
         if settings.backend not in {"jev", "llm"}:
             raise ResearchUnavailable("MATRIX_BACKEND须为jev或llm。")
         if not settings.credential_available:
@@ -115,10 +216,10 @@ def screen(documents, query, asof, settings, mode="keyword", max_documents=100):
         raise DataError("未知研究模式。")
     records = json.loads(matches.to_json(orient="records", date_format="iso"))
     return ResearchRun(str(uuid4()), backend, query, str(pd.Timestamp(asof).date()), len(eligible),
-                       round(time.perf_counter() - start, 4), records, datetime.now(timezone.utc).isoformat(), stats)
+                       round(time.perf_counter() - start, 4), records, datetime.now(timezone.utc).isoformat(), stats, operator)
 
 
-def _remote_screen(eligible, query, asof, settings, limit):
+def _remote_screen(eligible, query, asof, settings, limit, operator="all"):
     from urllib.parse import urlparse
     from urllib.request import Request, urlopen
     from uuid import UUID
@@ -129,7 +230,8 @@ def _remote_screen(eligible, query, asof, settings, limit):
     if not settings.service_token:
         raise ResearchUnavailable("请配置语义服务访问令牌。")
     body = {"documents": json.loads(eligible.to_json(orient="records", date_format="iso")),
-            "query": query, "asof": str(pd.Timestamp(asof).date()), "max_documents": limit}
+            "query": query, "asof": str(pd.Timestamp(asof).date()), "max_documents": limit,
+            "operator": operator}
     request = Request(settings.service_url.rstrip("/") + "/research", data=json.dumps(body).encode(),
                       headers={"Content-Type": "application/json", "Authorization": "Bearer " + settings.service_token})
     try:

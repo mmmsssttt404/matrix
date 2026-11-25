@@ -28,6 +28,9 @@ class ResearchPage(QtWidgets.QWidget):
         self.mode = QtWidgets.QComboBox()
         self.mode.addItems(["离线关键词", "JEVDB语义"])
         header.addWidget(self.mode)
+        self.operator = QtWidgets.QComboBox()
+        self.operator.addItems(["AND全部词", "OR任意词"])
+        header.addWidget(self.operator)
         layout.addLayout(header)
         self.query = QtWidgets.QPlainTextEdit("cloud software")
         self.query.setPlaceholderText("输入研究条件，例如：提供云计算服务的公司")
@@ -56,16 +59,22 @@ class ResearchPage(QtWidgets.QWidget):
             return
         query, day = self.query.toPlainText(), self.workspace.asof
         mode = "keyword" if self.mode.currentIndex() == 0 else "jevdb"
-        self.run_job(lambda: screen(self.workspace.documents, query, day, self.workspace.settings, mode), self.render)
+        operator = "all" if self.operator.currentIndex() == 0 else "any"
+        self.run_job(lambda: screen(self.workspace.documents, query, day, self.workspace.settings,
+                                    mode, 100, operator), self.render)
 
     def render(self, run):
         self.run = run
         run.save(self.workspace.settings.data_dir / "research_runs")
-        rows = [{"公司": r["symbol"], "资料标题": r["title"], "可用日期": pd.Timestamp(r["available_at"]).strftime("%Y-%m-%d"), "来源": r["source_url"]} for r in run.matches]
-        self.table.replace(pd.DataFrame(rows, columns=["公司", "资料标题", "可用日期", "来源"]))
-        self.table.setColumnWidth(0, 75)
-        self.table.setColumnWidth(1, 230)
-        self.summary.setText(f"{'离线关键词匹配' if run.backend == 'keyword_baseline' else 'JEVDB语义查询'} · {run.asof} · 检查{run.inputs}份资料 · 命中{len(run.matches)}份 · {run.elapsed_seconds:.2f}秒")
+        rows = [{"公司": r["symbol"], "相关度": r.get("match_score", ""), "资料标题": r["title"],
+                 "可用日期": pd.Timestamp(r["available_at"]).strftime("%Y-%m-%d"), "来源": r["source_url"]}
+                for r in run.matches]
+        self.table.replace(pd.DataFrame(rows, columns=["公司", "相关度", "资料标题", "可用日期", "来源"]))
+        self.table.setColumnWidth(0, 60)
+        self.table.setColumnWidth(1, 70)
+        self.table.setColumnWidth(2, 220)
+        mode = "离线关键词BM25" if run.backend.startswith("keyword") else "JEVDB语义查询"
+        self.summary.setText(f"{mode} · {run.asof} · 检查{run.inputs}份资料 · 命中{len(run.matches)}份 · {run.elapsed_seconds:.2f}秒")
         self.apply.setEnabled(len({r["symbol"] for r in run.matches} & set(self.workspace.symbols)) >= 2)
 
     def apply_now(self):
@@ -132,6 +141,11 @@ class PortfolioPage(QtWidgets.QWidget):
         weight_box.addWidget(label("目标配置 · 只做多", "section"))
         self.weights = Table(formats={"目标权重": lambda v: f"{v:.2%}"})
         weight_box.addWidget(self.weights)
+        weight_box.addWidget(label("风险贡献 · 占组合波动", "muted"))
+        self.risk_table = Table(formats={"权重": lambda v: f"{v:.2%}",
+                                         "风险贡献": lambda v: f"{v:.2%}",
+                                         "风险占比": lambda v: f"{v:.2%}"})
+        weight_box.addWidget(self.risk_table)
         weight_box.addWidget(button("导出权重", self.export_weights))
         middle.addWidget(weight_frame)
         heat_frame, heat_box = panel()
@@ -187,6 +201,12 @@ class PortfolioPage(QtWidgets.QWidget):
         for widget, text in zip(self.stat_values, [f"{risk.volatility:.2%}", str(len(risk.returns)), f"{risk.condition_after:.2f}"]):
             widget.setText(text)
         self.weights.replace(risk.weights.rename("目标权重").rename_axis("股票").reset_index())
+        self.risk_table.replace(pd.DataFrame({
+            "股票": risk.weights.index,
+            "权重": risk.weights.to_numpy(),
+            "风险贡献": risk.risk_contributions.to_numpy(),
+            "风险占比": risk.risk_share.to_numpy(),
+        }))
         self.heat.clear()
         matrix = risk.covariance.to_numpy()
         image = pg.ImageItem(matrix.T)
@@ -199,7 +219,13 @@ class PortfolioPage(QtWidgets.QWidget):
         for side in ["left", "bottom"]:
             self.heat.getAxis(side).setStyle(tickFont=pg.QtGui.QFont("Arial", 8))
         self.heat.autoRange()
-        self.diagnostics.setText(f"行列按公司序号对应 · 条件数 {risk.condition_before:.2f} → {risk.condition_after:.2f}\n最小特征值 {risk.eigenvalues.min():.4f}")
+        closure = ("闭式解满足非负约束" if risk.closed_form_feasible
+                   else f"闭式解含负权重 {risk.closed_form_weights.min():.1%}，非负约束起作用")
+        top = risk.explained_variance
+        self.diagnostics.setText(
+            f"行列按公司序号对应 · 条件数 {risk.condition_before:.2f} → {risk.condition_after:.2f}"
+            f" · 最小特征值 {risk.eigenvalues.min():.4f} · {'正定' if risk.positive_definite else '半正定'}\n"
+            f"PC1解释 {top[0]:.1%} · 前两主成分 {top[:2].sum():.1%} · {closure}")
         try:
             curve = holdout_curve(self.workspace.prices, risk.weights, day)
             self.curve.set_frame(curve)

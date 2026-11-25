@@ -37,7 +37,7 @@ def test_native_keyword_research_to_portfolio(desktop, qtbot):
     desktop.navigate(1)
     qtbot.mouseClick(desktop.research.search, QtCore.Qt.MouseButton.LeftButton)
     qtbot.waitUntil(lambda: not desktop._jobs, timeout=10000)
-    assert desktop.research.run.backend == "keyword_baseline"
+    assert desktop.research.run.backend == "keyword_bm25"
     assert len(desktop.research.run.matches) == 2
     qtbot.mouseClick(desktop.research.apply, QtCore.Qt.MouseButton.LeftButton)
     assert desktop.pages.currentIndex() == 2

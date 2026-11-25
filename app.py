@@ -9,7 +9,7 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-from matrixlab.analytics import analyze, holdout_curve, performance
+from matrixlab.analytics import analyze, holdout_curve, performance, shrinkage_path
 from matrixlab.config import Settings
 from matrixlab.data import (DOC_COLUMNS, PRICE_COLUMNS, DataError, data_quality,
                             read_documents, read_prices, validate_documents, validate_prices)
@@ -96,7 +96,7 @@ with overview:
 
 with research:
     st.subheader("从资料中筛选公司")
-    st.caption("离线模式按词匹配；JEVDB模式实际调用语义数据库。两种结果分别标记。")
+    st.caption("离线模式使用AND/OR词匹配并按BM25排序；JEVDB模式实际调用语义数据库。两种结果分别标记。")
     docs_path = settings.data_dir / "documents.csv"
     docs = None
     if docs_path.exists():
@@ -108,17 +108,20 @@ with research:
         st.info("尚无有效公司资料。运行fetch获取当前简介，或导入包含available_at及来源的资料CSV。")
     else:
         with st.form("research_form"):
-            query = st.text_area("研究条件", "cloud software", help="离线模式以空格拆词，任意词匹配；JEVDB模式支持自然语言条件。")
+            query = st.text_area("研究条件", "cloud software", help="离线模式支持AND/OR与引号短语；JEVDB模式支持自然语言条件。")
             l, r = st.columns(2)
             research_day = l.date_input("资料可用日期（纽约日末）", value=today, key="research_day")
             mode_label = r.selectbox("筛选方式", ["离线关键词基线", "JEVDB语义查询"])
+            operator_label = st.radio("关键词匹配方式（仅离线模式）", ["全部词命中（AND）", "任意词命中（OR）"],
+                                      horizontal=True)
             limit = st.slider("最多处理的资料条数", 1, 200, 100)
             submitted = st.form_submit_button("检索并保留依据", type="primary")
         if submitted:
             try:
                 with st.spinner("正在查询资料…"):
                     run = screen(docs, query, research_day, settings,
-                                 "keyword" if mode_label.startswith("离线") else "jevdb", limit)
+                                 "keyword" if mode_label.startswith("离线") else "jevdb", limit,
+                                 "all" if operator_label.startswith("全部") else "any")
                     run.save(settings.data_dir / "research_runs")
                     st.session_state.research_run = run
             except (DataError, ResearchUnavailable) as exc:
@@ -129,7 +132,10 @@ with research:
             st.success(f"{run.backend} · 检查{run.inputs}条资料 · 命中{len(run.matches)}条 · {run.elapsed_seconds:.3f}秒")
             results = run.frame()
             if not results.empty:
-                st.dataframe(results[["symbol", "title", "available_at", "source_url", "text"]], hide_index=True, width="stretch")
+                columns = ["symbol", "title", "available_at", "source_url", "text"]
+                if "match_score" in results.columns:
+                    columns.insert(1, "match_score")
+                st.dataframe(results[columns], hide_index=True, width="stretch")
                 if st.button("将这些公司用于组合研究"):
                     selected = sorted(set(results.symbol) & set(universe))
                     if len(selected) < 2:
@@ -171,10 +177,11 @@ with matrix:
             st.error(str(exc))
     risk = st.session_state.get("risk") if st.session_state.get("risk_signature") == signature else None
     if risk:
-        l, m, r = st.columns(3)
-        l.metric("年化波动率（样本内）", f"{risk.volatility:.2%}")
-        m.metric("有效收益率样本", len(risk.returns))
-        r.metric("正则化后条件数", f"{risk.condition_after:.2f}")
+        a, b, c, d = st.columns(4)
+        a.metric("年化波动率（原始Σ）", f"{risk.volatility:.2%}")
+        b.metric("年化波动率（收缩Σ）", f"{risk.regularized_volatility:.2%}")
+        c.metric("有效收益率样本", len(risk.returns))
+        d.metric("正则化后条件数", f"{risk.condition_after:.2f}")
         a, b = st.columns([1, 1.7])
         with a:
             st.dataframe(risk.weights.rename("目标权重").to_frame().style.format("{:.2%}"), width="stretch")
@@ -183,12 +190,49 @@ with matrix:
             fig = px.imshow(risk.covariance, color_continuous_scale="Teal", title="年化协方差矩阵")
             fig.update_layout(height=340, margin=dict(l=0, r=0, t=40, b=0))
             st.plotly_chart(fig, width="stretch")
-        with st.expander("矩阵推导与数值诊断"):
+        with st.expander("矩阵推导与数值诊断", expanded=False):
             st.latex(r"\Sigma=\frac{252}{T-1}X^T X,\quad\Sigma_\alpha=(1-\alpha)\Sigma+\alpha\frac{\mathrm{tr}(\Sigma)}{N}I")
             st.latex(r"\min_w\;w^T\Sigma_\alpha w\quad\mathrm{s.t.}\quad\mathbf{1}^T w=1,\; w\geq0")
-            st.write(f"原矩阵条件数：{risk.condition_before:.4g}；最小特征值：{risk.eigenvalues.min():.6g}；因缺失排除{risk.excluded_rows}行。")
+            st.write(f"原矩阵条件数：{risk.condition_before:.4g}；最小特征值：{risk.eigenvalues.min():.6g}；"
+                     f"回看窗口内因缺失排除{risk.excluded_rows}行；正定性：{'是' if risk.positive_definite else '否'}。")
             st.caption("协方差为Gram矩阵，理论上半正定；收缩改善病态性。目标权重通过带约束数值优化得到。")
             st.dataframe(risk.regularized, width="stretch")
+
+            st.markdown("**PCA（相关系数矩阵）**")
+            pca = pd.DataFrame({
+                "特征值": risk.pca_eigenvalues,
+                "解释方差": risk.explained_variance,
+                "累计解释": risk.explained_variance.cumsum(),
+            }, index=[f"PC{i + 1}" for i in range(len(risk.pca_eigenvalues))])
+            st.dataframe(pca.style.format({"特征值": "{:.4f}", "解释方差": "{:.2%}", "累计解释": "{:.2%}"}),
+                         width="stretch")
+            loadings = risk.pca_loadings.iloc[:, :min(3, risk.pca_loadings.shape[1])]
+            st.dataframe(loadings.style.format("{:.3f}"), width="stretch")
+            st.caption(f"PC1解释{risk.explained_variance[0]:.1%}，前两主成分累计{risk.explained_variance[:2].sum():.1%}。")
+
+            st.markdown("**风险贡献分解**")
+            contributions = pd.DataFrame({
+                "权重": risk.weights,
+                "风险贡献": risk.risk_contributions,
+                "风险占比": risk.risk_share,
+            })
+            st.dataframe(contributions.style.format("{:.2%}"), width="stretch")
+            st.caption("风险贡献 wᵢ(Σw)ᵢ/σ 之和等于组合波动率；占比之和为1。")
+
+            st.markdown("**无约束闭式解对比**")
+            closed = pd.DataFrame({"只做多QP": risk.weights, "闭式解": risk.closed_form_weights})
+            st.dataframe(closed.style.format("{:.2%}"), width="stretch")
+            if risk.closed_form_feasible:
+                st.caption(f"无约束解满足非负约束，与QP结果一致（目标差{risk.closed_form_gap:.3g}）。")
+            else:
+                st.caption(f"无约束解含负权重（最小{risk.closed_form_weights.min():.2%}），非负约束起作用；"
+                           f"QP目标值比无约束最优高{-risk.closed_form_gap:.3g}。")
+
+            st.markdown("**收缩路径**")
+            path = shrinkage_path(prices, selected, study_day, int(lookback))
+            fig = px.line(path, x="alpha", y="condition", markers=True, title="条件数随收缩系数变化")
+            fig.update_layout(height=300, xaxis_title="α", yaxis_title="条件数", margin=dict(l=0, r=0, t=40, b=0))
+            st.plotly_chart(fig, width="stretch")
         st.markdown("**样本外比较：次日复权开盘建仓，之后持有，权重随价格漂移。**")
         try:
             curve = holdout_curve(prices, risk.weights, study_day)
