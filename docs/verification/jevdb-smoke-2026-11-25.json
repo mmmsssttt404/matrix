@@ -1,0 +1,50 @@
+{
+  "date": "2026-11-25",
+  "status": "partial",
+  "environment": {
+    "platform": "WSL2 Ubuntu 24.04",
+    "python": "3.12",
+    "jevdb": "0.1.0",
+    "duckdb": "1.4.3"
+  },
+  "registered_functions": [
+    "jev_choose",
+    "jev_holds",
+    "jev_keys_overlap",
+    "jev_probability",
+    "jev_score",
+    "jevdb_stats"
+  ],
+  "typesafe_attempt": {
+    "result": "blocked",
+    "error": "IO Error: JEVDB: request failed or returned no answers (HTTP 451): {\"title\":\"Typesafe is not available in your region.\",\"status\":451}"
+  },
+  "deepseek_probe": {
+    "json_object": 200,
+    "json_schema_strict": 400,
+    "json_schema_plain": 400,
+    "error": "This response_format type is unavailable now"
+  },
+  "compatibility_proxy": {
+    "script": "scripts/jev_llm_proxy.py",
+    "endpoint": "http://127.0.0.1:8111/v1/",
+    "upstream": "https://api.deepseek.com/v1",
+    "model": "deepseek-flash",
+    "translation": "json_schema -> schema in prompt + json_object; validate and retry"
+  },
+  "evaluation": {
+    "queries": 40,
+    "errors": 0,
+    "jevdb": {"macro_precision": 0.8258, "macro_recall": 0.9688, "macro_f1": 0.8652, "mrr": 0.9062, "exact_match_rate": 0.6},
+    "keyword_and": {"macro_precision": 0.85, "macro_recall": 0.7688, "macro_f1": 0.7925, "mrr": 0.85, "exact_match_rate": 0.7},
+    "upstream_requests": 41,
+    "retried_requests": 5,
+    "prompt_tokens": 37689,
+    "completion_tokens": 42792,
+    "total_tokens": 80481,
+    "elapsed_seconds": 403.3,
+    "max_request_seconds": 56.3,
+    "results_file": "evaluation/results/both-deepseek.json"
+  },
+  "interpretation": "Real model-backed semantic results were obtained through a local protocol adapter on a DeepSeek-compatible endpoint. This is not a Typesafe-native call and must not be reported as the quality of the default JEVDB backend."
+}

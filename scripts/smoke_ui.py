@@ -45,7 +45,7 @@ try:
         expect(page.get_by_role("heading", name="让研究有依据，让风险可计算")).to_be_visible(timeout=30000)
         page.get_by_role("tab", name="02 公司研究").click()
         page.get_by_role("button", name="检索并保留依据", exact=True).click()
-        expect(page.get_by_text("keyword_baseline", exact=False)).to_be_visible(timeout=30000)
+        expect(page.get_by_text("keyword_bm25", exact=False)).to_be_visible(timeout=30000)
         page.get_by_role("tab", name="03 矩阵与组合").click()
         page.get_by_role("button", name="计算矩阵与最小方差组合", exact=True).click()
         expect(page.get_by_text("年化波动率（样本内）", exact=True)).to_be_visible(timeout=30000)
