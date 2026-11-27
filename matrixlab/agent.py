@@ -186,6 +186,7 @@ th{{background:#eff6ff;color:#1e3a8a}}@media print{{body{{background:#fff}}main{
 <p>有效共同收益率样本：<b>{diag.get('observations', '—')}</b> · 实际收缩系数 α：<b>{diag.get('alpha_used', '—')}</b>（Ledoit-Wolf 最优 α* = <b>{diag.get('ledoit_wolf_alpha', '—')}</b>）· 条件数：<b>{diag.get('condition_before', '—')} → {diag.get('condition_after', '—')}</b> · KKT 互补残差：<b>{kkt_str}</b> · PC1 解释方差：<b>{diag.get('pc1_explained', 0):.2%}</b></p>
 <div class="scroll">{html_table(weight_rows)}</div>
 <h2>4. 样本外表现对照（仅诊断展示，不参与权重拟合）</h2>
+<p class="muted">注：单次建仓次日复权开盘入场（首笔总成本 15bp）；夏普比率采用 r_f = 0 口径的复利年化收益 / 年化波动率。</p>
 <div class="scroll">{html_table(holdout_rows) if holdout_rows else "<p class='muted'>本次运行未启用样本外对比（可通过 include_holdout=True 开启）。</p>"}</div>
 <h2>5. 模拟调仓提案与原子成交明细</h2>
 <div class="scroll">{html_table(order_rows)}</div>
@@ -294,7 +295,8 @@ def run_workflow(
     }
     if include_holdout:
         try:
-            curve = holdout_curve(prices, target_weights, asof_str)
+            label_name = "风险平价(ERC)" if strategy == "erc" else "最小方差组合"
+            curve = holdout_curve(prices, target_weights, asof_str, strategy_name=label_name)
             diagnostics["holdout_performance"] = performance(curve).round(6).to_dict()
         except DataError:
             diagnostics["holdout_performance"] = None

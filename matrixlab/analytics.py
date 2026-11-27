@@ -225,7 +225,7 @@ def shrinkage_path(prices, symbols, asof, lookback=252, alphas=None):
     return pd.DataFrame(rows)
 
 
-def holdout_curve(prices, weights, signal_date, end_date=None, cost_bps=15):
+def holdout_curve(prices, weights, signal_date, end_date=None, cost_bps=15, strategy_name="最小方差组合"):
     """Buy once at the next session's adjusted open; then hold drifting weights."""
     if not np.isfinite(cost_bps) or not 0 <= cost_bps < 10000:
         raise DataError("成本须为0—10000bp之间的有限数。")
@@ -247,7 +247,7 @@ def holdout_curve(prices, weights, signal_date, end_date=None, cost_bps=15):
         raise DataError("样本外持仓期间有缺失行情，不能自动填充估值。")
     relatives = closes.divide(entry.open, axis=1)
     invested = 1 / (1 + cost_bps / 10000)
-    curve = pd.DataFrame({"最小方差组合": relatives @ weights * invested,
+    curve = pd.DataFrame({strategy_name: relatives @ weights * invested,
                           "等权组合": relatives.mean(axis=1) * invested})
     curve.index.name = "date"
     initial = pd.DataFrame({c: [1.0] for c in curve}, index=[pd.Timestamp(signal_date)])

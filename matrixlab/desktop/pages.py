@@ -380,8 +380,27 @@ class PortfolioPage(QtWidgets.QWidget):
         self.workspace.risk_strategy = "erc" if index == 1 else "min_var"
         if self.workspace.risk is not None:
             self._refresh_risk_breakdown(self.workspace.risk)
+            self._refresh_holdout(self.workspace.risk_asof)
             self.calculated.emit()
             self.state_changed.emit()
+
+    def _refresh_holdout(self, day):
+        weights = self.workspace.target_weights
+        if weights is None or day is None:
+            return
+        try:
+            curve = holdout_curve(self.workspace.prices, weights, day, strategy_name=self.workspace.strategy_label)
+            self.curve.set_frame(curve)
+            metrics = performance(curve).reset_index().rename(columns={"index": "策略"})
+            self.perf_table.replace(metrics)
+            self.summary.setText(
+                f"{day:%Y-%m-%d}拟合（{self.workspace.strategy_label}）· 样本外累计收益 {metrics.iloc[0]['累计收益']:.2%} / 等权 {metrics.iloc[1]['累计收益']:.2%}"
+                f" · 夏普 {metrics.iloc[0]['夏普比率']:.2f} / {metrics.iloc[1]['夏普比率']:.2f} · 首笔总成本15bp"
+            )
+        except DataError as exc:
+            self.curve.clear()
+            self.perf_table.replace(pd.DataFrame())
+            self.summary.setText(str(exc))
 
     def _refresh_risk_breakdown(self, risk):
         weights = self.workspace.target_weights
@@ -498,19 +517,7 @@ class PortfolioPage(QtWidgets.QWidget):
             f"PC1 {top[0]:.1%} / 前两主成分 {top[:2].sum():.1%} · {closure}"
             f" · KKT互补残差 {risk.kkt_complementarity_error:.2e}"
         )
-        try:
-            curve = holdout_curve(self.workspace.prices, risk.weights, day)
-            self.curve.set_frame(curve)
-            metrics = performance(curve).reset_index().rename(columns={"index": "策略"})
-            self.perf_table.replace(metrics)
-            self.summary.setText(
-                f"{day:%Y-%m-%d}拟合 · 样本外累计收益 {metrics.iloc[0]['累计收益']:.2%} / 等权 {metrics.iloc[1]['累计收益']:.2%}"
-                f" · 夏普 {metrics.iloc[0]['夏普比率']:.2f} / {metrics.iloc[1]['夏普比率']:.2f} · 首笔总成本15bp"
-            )
-        except DataError as exc:
-            self.curve.clear()
-            self.perf_table.replace(pd.DataFrame())
-            self.summary.setText(str(exc))
+        self._refresh_holdout(day)
         self.calculated.emit()
         self.state_changed.emit()
 

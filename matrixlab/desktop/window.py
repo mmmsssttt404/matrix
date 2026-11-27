@@ -304,6 +304,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def navigate(self, index):
         self.pages.setCurrentIndex(index)
         self.nav[index].setChecked(True)
+        self.refresh_workflow()
 
     def refresh(self):
         ws = self.workspace
@@ -347,7 +348,12 @@ class MainWindow(QtWidgets.QMainWindow):
             hint = "研究筛选已完成，点击“加入组合研究”进入矩阵风控，或前往第 4 页运行端到端 Agent 工作流。"
         else:
             hint = "前往“公司研究”按研究日截断筛选公司，或直接进入“Agent工作流”一键运行四层编排预览。"
-        self.workflow.setText(f"① 公司研究 ({backend}) → ② 矩阵组合 ({ws.strategy_label}) → ③ Agent 四层审批 / SQLite 原子交易 | 下一步：{hint}")
+        active_strat = (
+            ("风险平价(ERC)" if self.agent.strategy.currentIndex() == 1 else "最小方差(QP)")
+            if self.pages.currentIndex() == 3
+            else ws.strategy_label
+        )
+        self.workflow.setText(f"① 公司研究 ({backend}) → ② 矩阵组合 ({active_strat}) → ③ Agent 四层审批 / SQLite 原子交易 | 下一步：{hint}")
 
     def refresh_watch(self):
         frame = self.workspace.quotes()

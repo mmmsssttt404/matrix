@@ -128,6 +128,8 @@ def test_agent_export_html_report_is_self_contained(prices, documents, tmp_path)
     assert "HIGH_EXPLICIT_APPROVAL" in content
     assert "<script" not in content.lower()
     assert "AAA" in content and "BBB" in content
+    assert "<td>风险平价(ERC)</td>" in content
+    assert "<td>最小方差组合</td>" not in content
 
 
 def test_desktop_stale_invalidation_same_day_account_and_html_report(prices, documents, tmp_path, monkeypatch, qtbot, qapp):
