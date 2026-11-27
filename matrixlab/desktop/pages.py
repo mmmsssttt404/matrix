@@ -1,13 +1,18 @@
 from dataclasses import asdict
 import json
+from pathlib import Path
+import time
 
+import numpy as np
 import pandas as pd
 from PySide6 import QtCore, QtWidgets
 import pyqtgraph as pg
 
+from ..agent import RISK_HIGH, run_workflow
 from ..analytics import analyze, holdout_curve, performance, rolling_holdout_curve, shrinkage_path
 from ..data import DataError
 from ..research import screen
+from ..trading import Order, TradingError
 from .charts import EquityChart
 from .dialogs import SourceDialog, StockDialog
 from .widgets import Table, button, label, panel
@@ -32,7 +37,7 @@ class ResearchPage(QtWidgets.QWidget):
         self.operator.addItems(["AND全部词", "OR任意词"])
         header.addWidget(self.operator)
         self.jev_op = QtWidgets.QComboBox()
-        self.jev_op.addItems(["jev_holds 布尔", "jev_probability 置信度", "jev_choose 行业分类", "Prune-First 剪枝"])
+        self.jev_op.addItems(["jev_holds 布尔", "jev_probability 置信度", "jev_choose 行业分类", "jev_score 打分排序", "Prune-First 剪枝"])
         self.jev_op.setToolTip("仅在 JEVDB 语义模式下生效")
         header.addWidget(self.jev_op)
         self.threshold = QtWidgets.QDoubleSpinBox()
@@ -43,6 +48,13 @@ class ResearchPage(QtWidgets.QWidget):
         self.threshold.setFixedWidth(82)
         self.threshold.setToolTip("jev_probability 置信度截断阈值")
         header.addWidget(self.threshold)
+        self.prune_k = QtWidgets.QSpinBox()
+        self.prune_k.setRange(1, 50)
+        self.prune_k.setValue(3)
+        self.prune_k.setPrefix("K=")
+        self.prune_k.setFixedWidth(66)
+        self.prune_k.setToolTip("Prune-First 第一阶段 BM25 粗排保留候选文档数（消融最优 K=3）")
+        header.addWidget(self.prune_k)
         layout.addLayout(header)
         self.query = QtWidgets.QPlainTextEdit("cloud software")
         self.query.setPlaceholderText("输入研究条件，例如：提供云计算服务的公司")
@@ -73,6 +85,7 @@ class ResearchPage(QtWidgets.QWidget):
         self.operator.setEnabled(not is_jev)
         self.jev_op.setEnabled(is_jev)
         self.threshold.setEnabled(is_jev and self.jev_op.currentIndex() == 1)
+        self.prune_k.setEnabled(is_jev and self.jev_op.currentIndex() == 4)
 
     def search_now(self):
         if self.workspace.documents.empty:
@@ -81,10 +94,10 @@ class ResearchPage(QtWidgets.QWidget):
         query, day = self.query.toPlainText(), self.workspace.asof
         mode = "keyword" if self.mode.currentIndex() == 0 else "jevdb"
         operator = "all" if self.operator.currentIndex() == 0 else "any"
-        jev_ops = ["holds", "probability", "choose", "prune_then_decide"]
+        jev_ops = ["holds", "probability", "choose", "score", "prune_then_decide"]
         jev_op = jev_ops[self.jev_op.currentIndex()]
         threshold = self.threshold.value()
-        prune_k = 6 if jev_op == "prune_then_decide" else None
+        prune_k = self.prune_k.value() if jev_op == "prune_then_decide" else None
         self.run_job(
             lambda: screen(
                 self.workspace.documents, query, day, self.workspace.settings,
@@ -170,6 +183,11 @@ class PortfolioPage(QtWidgets.QWidget):
         self.use_lw = QtWidgets.QCheckBox("Ledoit-Wolf最优α*")
         self.use_lw.setToolTip("自动采用Ledoit-Wolf(2004)解析最优收缩强度")
         controls.addWidget(self.use_lw)
+        controls.addWidget(label("调仓目标", "muted"))
+        self.strategy = QtWidgets.QComboBox()
+        self.strategy.addItems(["最小方差(QP)", "风险平价(ERC)"])
+        self.strategy.setToolTip("切换右侧“按组合目标调仓”与风险分解采用的目标权重")
+        controls.addWidget(self.strategy)
         controls.addStretch()
         self.calculate = button("计算组合", self.calculate_now, "primary")
         controls.addWidget(self.calculate)
@@ -288,10 +306,32 @@ class PortfolioPage(QtWidgets.QWidget):
         self.lookback.valueChanged.connect(self.invalidate)
         self.alpha.valueChanged.connect(self.invalidate)
         self.use_lw.toggled.connect(self._toggle_lw)
+        self.strategy.currentIndexChanged.connect(self._change_strategy)
 
     def _toggle_lw(self, checked):
         self.alpha.setEnabled(not checked)
         self.invalidate()
+
+    def _change_strategy(self, index):
+        self.workspace.risk_strategy = "erc" if index == 1 else "min_var"
+        if self.workspace.risk is not None:
+            self._refresh_risk_breakdown(self.workspace.risk)
+            self.calculated.emit()
+
+    def _refresh_risk_breakdown(self, risk):
+        weights = self.workspace.target_weights
+        cov = risk.regularized if self.workspace.risk_strategy == "erc" else risk.covariance
+        w_vec = weights.to_numpy(dtype=float)
+        c_mat = cov.to_numpy(dtype=float)
+        vol = float(np.sqrt(max(float(w_vec @ c_mat @ w_vec), 0.0)))
+        ctr = (w_vec * (c_mat @ w_vec) / vol) if vol > 0 else np.zeros_like(w_vec)
+        share = (ctr / vol) if vol > 0 else np.zeros_like(w_vec)
+        self.risk_table.replace(pd.DataFrame({
+            "股票": weights.index,
+            "权重": w_vec,
+            "风险贡献": ctr,
+            "风险占比": share,
+        }))
 
     def invalidate(self, *args):
         self.workspace.risk = None
@@ -339,12 +379,7 @@ class PortfolioPage(QtWidgets.QWidget):
             "闭式解": risk.closed_form_weights.to_numpy(),
             "ERC风险平价": risk.risk_parity_weights.to_numpy(),
         }))
-        self.risk_table.replace(pd.DataFrame({
-            "股票": risk.weights.index,
-            "权重": risk.weights.to_numpy(),
-            "风险贡献": risk.risk_contributions.to_numpy(),
-            "风险占比": risk.risk_share.to_numpy(),
-        }))
+        self._refresh_risk_breakdown(risk)
         pca_df = pd.DataFrame({
             "主成分": [f"PC{i + 1}" for i in range(len(risk.pca_eigenvalues))],
             "特征值": risk.pca_eigenvalues,
@@ -427,6 +462,270 @@ class PortfolioPage(QtWidgets.QWidget):
     def export_weights(self):
         if self.workspace.risk is None:
             return
-        path, _ = QtWidgets.QFileDialog.getSaveFileName(self, "导出权重", "weights.csv", "CSV (*.csv)")
+        risk = self.workspace.risk
+        path, _ = QtWidgets.QFileDialog.getSaveFileName(self, "导出权重与诊断", "weights.csv", "CSV (*.csv)")
         if path:
-            self.workspace.risk.weights.to_csv(path)
+            pd.DataFrame({
+                "symbol": risk.weights.index,
+                "min_var_weight": risk.weights.to_numpy(),
+                "closed_form_weight": risk.closed_form_weights.to_numpy(),
+                "erc_weight": risk.risk_parity_weights.to_numpy(),
+                "risk_contribution": risk.risk_contributions.to_numpy(),
+                "risk_share": risk.risk_share.to_numpy(),
+            }).to_csv(path, index=False)
+
+
+class AgentPage(QtWidgets.QWidget):
+    """Four-layer Agentic workflow console with explicit human approval gate."""
+
+    executed = QtCore.Signal(str)
+
+    def __init__(self, workspace, run_job, parent=None):
+        super().__init__(parent)
+        self.workspace, self.run_job = workspace, run_job
+        self.trace = None
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.setContentsMargins(14, 12, 14, 12)
+
+        header = QtWidgets.QHBoxLayout()
+        header.addWidget(label("Agent 四层工作流", "section"))
+        header.addStretch()
+        self.mode = QtWidgets.QComboBox()
+        self.mode.addItems(["离线关键词", "JEVDB语义"])
+        header.addWidget(self.mode)
+        self.operator = QtWidgets.QComboBox()
+        self.operator.addItems(["OR任意词", "AND全部词"])
+        header.addWidget(self.operator)
+        self.jev_op = QtWidgets.QComboBox()
+        self.jev_op.addItems(["jev_holds 布尔", "jev_probability 置信度", "jev_choose 行业分类", "jev_score 打分排序", "Prune-First 剪枝"])
+        header.addWidget(self.jev_op)
+        self.strategy = QtWidgets.QComboBox()
+        self.strategy.addItems(["最小方差(QP)", "风险平价(ERC)"])
+        header.addWidget(self.strategy)
+        self.use_lw = QtWidgets.QCheckBox("Ledoit-Wolf α*")
+        self.use_lw.setChecked(True)
+        header.addWidget(self.use_lw)
+        layout.addLayout(header)
+
+        self.query = QtWidgets.QPlainTextEdit("cloud software")
+        self.query.setPlaceholderText("输入自然语言研究需求，系统按 Preamble → Plan → Retrieve → Risk → Proposal 编排，执行写入需人工显式审批。")
+        self.query.setMaximumHeight(48)
+        layout.addWidget(self.query)
+
+        actions = QtWidgets.QHBoxLayout()
+        self.preview_btn = button("运行四层工作流（预览）", self.run_preview, "primary")
+        self.preview_btn.setObjectName("agentPreview")
+        actions.addWidget(self.preview_btn)
+        self.approve_btn = button("人工批准并执行撮合", self.approve_now, "buy")
+        self.approve_btn.setObjectName("agentApprove")
+        self.approve_btn.setEnabled(False)
+        actions.addWidget(self.approve_btn)
+        actions.addStretch()
+        self.export_btn = button("导出审计轨迹 JSON", self.export_trace)
+        self.export_btn.setEnabled(False)
+        actions.addWidget(self.export_btn)
+        layout.addLayout(actions)
+
+        self.summary = label("遵循 Lec0 四层架构与三级人工风控：预览阶段严格只读、零落盘，仅点击“人工批准并执行撮合”后才原子写入 SQLite 账本。", "muted")
+        self.summary.setWordWrap(True)
+        layout.addWidget(self.summary)
+
+        splitter = QtWidgets.QSplitter(QtCore.Qt.Orientation.Vertical)
+        trace_panel, trace_box = panel()
+        trace_box.addWidget(label("四层执行轨迹与风险分级门控（LOW_AUTO / MEDIUM_CONFIRM / HIGH_EXPLICIT_APPROVAL）", "section"))
+        self.steps_table = Table()
+        trace_box.addWidget(self.steps_table)
+        splitter.addWidget(trace_panel)
+
+        order_panel, order_box = panel()
+        order_box.addWidget(label("调仓提案预览 / 原子撮合成交明细（次日复权开盘价 + 单列手续费与滑点）", "section"))
+        self.orders_table = Table(formats={"目标权重": lambda v: f"{v:.2%}" if pd.notna(v) else "—"})
+        order_box.addWidget(self.orders_table)
+        splitter.addWidget(order_panel)
+        splitter.setSizes([270, 230])
+        layout.addWidget(splitter, 1)
+
+        self.mode.currentIndexChanged.connect(self._sync_controls)
+        self._sync_controls()
+
+    def _sync_controls(self):
+        is_jev = self.mode.currentIndex() == 1
+        self.operator.setEnabled(not is_jev)
+        self.jev_op.setEnabled(is_jev)
+
+    def invalidate(self, *args):
+        if self.trace is not None and not self.trace.approved_execution:
+            self.trace = None
+            self.approve_btn.setEnabled(False)
+            self.export_btn.setEnabled(False)
+
+    def run_preview(self):
+        if self.workspace.prices.empty or self.workspace.documents.empty:
+            self.summary.setText("当前工作区缺少行情或公司资料，请先下载数据或导入 CSV。")
+            return
+        query = self.query.toPlainText().strip()
+        day = str(self.workspace.asof.date())
+        mode = "keyword" if self.mode.currentIndex() == 0 else "jevdb"
+        operator = "any" if self.operator.currentIndex() == 0 else "all"
+        jev_ops = ["holds", "probability", "choose", "score", "prune_then_decide"]
+        jev_op = jev_ops[self.jev_op.currentIndex()]
+        prune_k = 3 if jev_op == "prune_then_decide" else None
+        strategy = "erc" if self.strategy.currentIndex() == 1 else "min_var"
+        use_lw = self.use_lw.isChecked()
+        broker_path = self.workspace.broker.path
+
+        self.run_job(
+            lambda: run_workflow(
+                self.workspace.prices,
+                self.workspace.documents,
+                query,
+                day,
+                self.workspace.settings,
+                mode=mode,
+                operator=operator,
+                jev_op=jev_op,
+                prune_k=prune_k,
+                use_ledoit_wolf=use_lw,
+                strategy=strategy,
+                broker_path=broker_path,
+                approve_execution=False,
+            ),
+            self.render_trace,
+        )
+
+    def _summarize_step(self, step):
+        s = step["summary"]
+        action = step["action"]
+        if action == "decompose_request":
+            return f"拆解 {len(s.get('plan', []))} 个 Skill 任务"
+        if action.startswith("screen("):
+            syms = ",".join(s.get("selected_symbols", []))
+            return f"评估 {s.get('inputs_evaluated', 0)} 份 → 命中 {len(s.get('selected_symbols', []))} 股 ({syms})"
+        if action.startswith("analyze_portfolio"):
+            return (
+                f"策略={s.get('strategy')} · α={s.get('alpha_used')} · κ={s.get('condition_before')}→{s.get('condition_after')}"
+                f" · KKT={s.get('kkt_complementarity_error'):.2e}"
+            )
+        if action.startswith("propose_rebalance"):
+            return f"生成 {s.get('order_count', 0)} 笔调仓单（账户时钟 {s.get('account_clock')}）"
+        if step["status"] == "executed":
+            return f"已人工审批并原子成交 {s.get('fills_count', 0)} 笔"
+        return "等待人工显式审批（未写入 paper.sqlite3）"
+
+    def render_trace(self, trace):
+        self.trace = trace
+        trace.save(self.workspace.settings.data_dir / "agent_runs")
+        status_map = {
+            "completed": "已完成",
+            "awaiting_confirmation": "待确认",
+            "blocked_pending_human_approval": "已拦截(待审批)",
+            "executed": "已审批成交",
+        }
+        step_rows = [
+            {
+                "#": s["step"],
+                "层级 · Skill": f"{s['layer'].split('/')[0]} · {s['skill'].replace('matrix-', '')}",
+                "风险等级": s["risk_tier"],
+                "状态": status_map.get(s["status"], s["status"]),
+                "执行摘要与耗时": f"{self._summarize_step(s)} ({s['elapsed_seconds']:.2f}s)",
+            }
+            for s in trace.steps
+        ]
+        self.steps_table.replace(pd.DataFrame(step_rows))
+        self.steps_table.resizeColumnsToContents()
+        self.steps_table.horizontalHeader().setStretchLastSection(True)
+
+        target_w = trace.diagnostics.get("target_weights", trace.diagnostics.get("weights", {}))
+        if trace.fills:
+            order_rows = [
+                {
+                    "代码": f["symbol"],
+                    "方向": "买入" if f["side"] == "BUY" else "卖出",
+                    "份额": f["quantity"],
+                    "目标权重": target_w.get(f["symbol"]),
+                    "状态/成交": f"已成交 @ {f['price']:.4f} (费 {f['fee']:.2f}, 日期 {f['fill_date']})",
+                }
+                for f in trace.fills
+            ]
+        else:
+            order_rows = [
+                {
+                    "代码": o["symbol"],
+                    "方向": "买入" if o["side"] == "BUY" else "卖出",
+                    "份额": o["quantity"],
+                    "目标权重": target_w.get(o["symbol"]),
+                    "状态/成交": "待人工审批（按次日开盘价撮合）",
+                }
+                for o in trace.proposed_orders
+            ]
+        self.orders_table.replace(pd.DataFrame(order_rows, columns=["代码", "方向", "份额", "目标权重", "状态/成交"]))
+        self.orders_table.resizeColumnsToContents()
+
+        strat_name = "风险平价(ERC)" if trace.strategy == "erc" else "最小方差(QP)"
+        status_zh = "已人工批准并写入 SQLite 账本" if trace.approved_execution else "预览完成（高风险写入已拦截，等待人工批准）"
+        self.summary.setText(
+            f"Trace {trace.trace_id[:8]} · {trace.asof} · 策略 {strat_name} · 选中 {len(trace.selected_symbols)} 股 "
+            f"({', '.join(trace.selected_symbols)}) · α={trace.diagnostics['alpha_used']:.4f} · "
+            f"KKT={trace.diagnostics['kkt_complementarity_error']:.2e} · {status_zh}"
+        )
+        self.export_btn.setEnabled(True)
+        has_future = bool((self.workspace.prices.date > pd.Timestamp(trace.asof)).any())
+        self.approve_btn.setEnabled((not trace.approved_execution) and bool(trace.proposed_orders) and has_future)
+
+    def approve_now(self, confirm=True):
+        if self.trace is None or self.trace.approved_execution or not self.trace.proposed_orders:
+            return
+        if self.workspace.asof is None or str(self.workspace.asof.date()) != self.trace.asof:
+            self.summary.setText("顶部研究日期已变更，请重新运行工作流预览后再审批。")
+            self.approve_btn.setEnabled(False)
+            return
+        strat_name = "风险平价(ERC)" if self.trace.strategy == "erc" else "最小方差(QP)"
+        if confirm:
+            answer = QtWidgets.QMessageBox.question(
+                self,
+                "高风险操作人工审批确认（HIGH_EXPLICIT_APPROVAL）",
+                f"确认按预览结果写入本地模拟交易账本（paper.sqlite3）？\n\n"
+                f"研究日期：{self.trace.asof}\n"
+                f"优化策略：{strat_name}\n"
+                f"待执行订单：{len(self.trace.proposed_orders)} 笔（先卖后买、次日复权开盘价撮合、整批原子事务）\n"
+                f"如尚未建户，将自动以 $100,000 在 {self.trace.asof} 初始化模拟账户。",
+            )
+            if answer != QtWidgets.QMessageBox.StandardButton.Yes:
+                return
+        t0 = time.perf_counter()
+        try:
+            broker = self.workspace.broker
+            if broker.exists():
+                clock = broker.state()[0]["clock"]
+                if clock != self.trace.asof:
+                    raise TradingError(f"当前账户模拟日期为 {clock}，与预览日期 {self.trace.asof} 不一致。")
+            else:
+                broker.initialize(100000.0, self.trace.asof)
+            ticket = [Order(o["symbol"], o["side"], int(o["quantity"])) for o in self.trace.proposed_orders]
+            fills = broker.execute(ticket, self.trace.asof, self.workspace.prices, f"agent-{self.trace.trace_id}")
+        except (TradingError, DataError) as exc:
+            self.summary.setText(f"审批执行中止：{exc}")
+            return
+
+        self.trace.approved_execution = True
+        self.trace.fills = fills
+        self.trace.steps[-1] = {
+            "step": 5,
+            "layer": "Action/Execution",
+            "skill": "matrix-paper-broker",
+            "action": "execute_orders",
+            "risk_tier": RISK_HIGH,
+            "status": "executed",
+            "elapsed_seconds": round(time.perf_counter() - t0, 4),
+            "summary": {"fills_count": len(fills), "fills": fills},
+        }
+        self.render_trace(self.trace)
+        if fills:
+            self.executed.emit(fills[0]["fill_date"])
+
+    def export_trace(self):
+        if not self.trace:
+            return
+        path, _ = QtWidgets.QFileDialog.getSaveFileName(self, "导出 Agent 审计轨迹", f"agent-trace-{self.trace.trace_id[:8]}.json", "JSON (*.json)")
+        if path:
+            Path(path).write_text(json.dumps(asdict(self.trace), ensure_ascii=False, indent=2, default=str), encoding="utf-8")

@@ -41,6 +41,7 @@ class AgentTrace:
     asof: str
     mode: str
     jev_op: str
+    strategy: str
     approved_execution: bool
     steps: list
     selected_symbols: list
@@ -71,6 +72,7 @@ def run_workflow(
     lookback=252,
     alpha=0.05,
     use_ledoit_wolf=True,
+    strategy="min_var",
     broker_path=None,
     initial_cash=100000.0,
     approve_execution=False,
@@ -83,6 +85,8 @@ def run_workflow(
       - MEDIUM_CONFIRM: rebalance ticket construction (preview only)
       - HIGH_EXPLICIT_APPROVAL: SQLite ledger mutation (requires approve_execution=True)
     """
+    if strategy not in {"min_var", "erc"}:
+        raise DataError(f"不支持的组合优化策略：{strategy}（仅支持 min_var / erc）。")
     trace_id = str(uuid4())
     steps = []
     asof_ts = pd.Timestamp(asof)
@@ -126,8 +130,10 @@ def run_workflow(
     # Step 3: Action / Analytical Computation (matrix-portfolio-risk skill)
     t0 = time.perf_counter()
     risk = analyze(prices, selected, asof_str, lookback=lookback, alpha=alpha, use_ledoit_wolf=use_ledoit_wolf)
+    target_weights = risk.risk_parity_weights if strategy == "erc" else risk.weights
     diagnostics = {
         "symbols": selected,
+        "strategy": strategy,
         "observations": len(risk.returns),
         "alpha_used": round(risk.alpha, 6),
         "ledoit_wolf_alpha": round(risk.ledoit_wolf_alpha, 6),
@@ -143,17 +149,18 @@ def run_workflow(
         "kkt_complementarity_error": risk.kkt_complementarity_error,
         "weights": {k: round(float(v), 6) for k, v in risk.weights.items()},
         "erc_weights": {k: round(float(v), 6) for k, v in risk.risk_parity_weights.items()},
+        "target_weights": {k: round(float(v), 6) for k, v in target_weights.items()},
     }
     if include_holdout:
         try:
-            curve = holdout_curve(prices, risk.weights, asof_str)
+            curve = holdout_curve(prices, target_weights, asof_str)
             diagnostics["holdout_performance"] = performance(curve).round(6).to_dict()
         except DataError:
             diagnostics["holdout_performance"] = None
     else:
         diagnostics["holdout_performance"] = None
     steps.append(asdict(TraceStep(
-        3, "Action/Execution", "matrix-portfolio-risk", "analyze_portfolio", RISK_LOW, "completed",
+        3, "Action/Execution", "matrix-portfolio-risk", f"analyze_portfolio({strategy})", RISK_LOW, "completed",
         round(time.perf_counter() - t0, 4), diagnostics,
     )))
 
@@ -173,11 +180,11 @@ def run_workflow(
         positions = pd.DataFrame(columns=["symbol", "quantity"])
         equity = float(initial_cash)
         clock = asof_str
-    ticket = rebalance_orders(prices, risk.weights, asof_str, equity, positions)
+    ticket = rebalance_orders(prices, target_weights, asof_str, equity, positions)
     proposed = [asdict(order) for order in ticket]
     steps.append(asdict(TraceStep(
-        4, "Action/Execution", "matrix-paper-broker", "propose_rebalance", RISK_MEDIUM, "awaiting_confirmation",
-        round(time.perf_counter() - t0, 4), {"order_count": len(proposed), "orders": proposed, "account_clock": clock},
+        4, "Action/Execution", "matrix-paper-broker", f"propose_rebalance({strategy})", RISK_MEDIUM, "awaiting_confirmation",
+        round(time.perf_counter() - t0, 4), {"strategy": strategy, "order_count": len(proposed), "orders": proposed, "account_clock": clock},
     )))
 
     # Step 5: High-Risk Ledger Execution (Explicit Approval Gate)
@@ -207,6 +214,7 @@ def run_workflow(
         asof=asof_str,
         mode=mode,
         jev_op=jev_op,
+        strategy=strategy,
         approved_execution=bool(approve_execution),
         steps=steps,
         selected_symbols=selected,

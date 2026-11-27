@@ -32,10 +32,21 @@ class Workspace(QtCore.QObject):
         self.asof = None
         self.risk = None
         self.risk_asof = None
+        self.risk_strategy = "min_var"
         self.selection_asof = None
         self.selected_symbols = []
         self.broker = Broker(self.settings.data_dir / "paper.sqlite3")
         self.reload()
+
+    @property
+    def target_weights(self):
+        if self.risk is None:
+            return None
+        return self.risk.risk_parity_weights if self.risk_strategy == "erc" else self.risk.weights
+
+    @property
+    def strategy_label(self):
+        return "风险平价(ERC)" if self.risk_strategy == "erc" else "最小方差(QP)"
 
     def reload(self):
         price_path = self.settings.data_dir / "prices.csv"

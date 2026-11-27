@@ -15,7 +15,7 @@ from ..data import DataError, data_quality, validate_documents, validate_prices
 from ..trading import Order, TradingError, rebalance_orders
 from .charts import PriceChart
 from .dialogs import AccountDialog, ConnectionDialog
-from .pages import PortfolioPage, ResearchPage
+from .pages import AgentPage, PortfolioPage, ResearchPage
 from .theme import DOWN, UP
 from .widgets import Table, Work, button, label, panel
 from .workspace import COMPANIES, Workspace
@@ -38,6 +38,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.workspace.changed.connect(self.refresh)
         self.workspace.date_changed.connect(self.refresh)
         self.workspace.date_changed.connect(self.portfolio.invalidate)
+        self.workspace.date_changed.connect(self.agent.invalidate)
         self.workspace.symbol_changed.connect(self.refresh_symbol)
         self.refresh()
 
@@ -57,7 +58,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 action.setShortcut(shortcut)
             action.triggered.connect(callback)
         view = bar.addMenu("查看")
-        for index, caption in enumerate(["行情工作台", "公司研究", "矩阵组合"]):
+        for index, caption in enumerate(["行情工作台", "公司研究", "矩阵组合", "Agent工作流"]):
             action = view.addAction(caption)
             action.setShortcut(f"Ctrl+{index+1}")
             action.triggered.connect(lambda checked=False, i=index: self.navigate(i))
@@ -81,7 +82,7 @@ class MainWindow(QtWidgets.QMainWindow):
         top_row.addSpacing(20)
         self.nav = []
         self.nav_group = QtWidgets.QButtonGroup(self)
-        for i, text in enumerate(["行情工作台", "公司研究", "矩阵组合"]):
+        for i, text in enumerate(["行情工作台", "公司研究", "矩阵组合", "Agent工作流"]):
             item = button(text, lambda checked=False, index=i: self.navigate(index), "nav")
             item.setCheckable(True)
             self.nav_group.addButton(item)
@@ -142,7 +143,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.research.apply_selection.connect(lambda: self.navigate(2))
         self.portfolio = PortfolioPage(self.workspace, self.run_job)
         self.portfolio.calculated.connect(self.refresh_account)
-        for page in [self.market, self.research, self.portfolio]:
+        self.agent = AgentPage(self.workspace, self.run_job)
+        self.agent.executed.connect(self.on_agent_executed)
+        for page in [self.market, self.research, self.portfolio, self.agent]:
             self.pages.addWidget(page)
         center.addWidget(self.pages)
         self.bottom = QtWidgets.QTabWidget()
@@ -440,15 +443,15 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         try:
             _, positions, snapshots, _ = ws.broker.state()
-            ticket = rebalance_orders(ws.prices, ws.risk.weights, ws.asof, float(snapshots.iloc[-1].equity), positions)
+            ticket = rebalance_orders(ws.prices, ws.target_weights, ws.asof, float(snapshots.iloc[-1].equity), positions)
             if not ticket:
                 self.message("当前份额已接近目标配置，无需调仓。")
                 return
             dialog = QtWidgets.QDialog(self)
-            dialog.setWindowTitle("组合调仓预览")
+            dialog.setWindowTitle(f"组合调仓预览 · {ws.strategy_label}")
             dialog.resize(520, 380)
             layout = QtWidgets.QVBoxLayout(dialog)
-            layout.addWidget(label("按研究日收盘估算份额，预留5%现金；实际按次日开盘成交。", "muted"))
+            layout.addWidget(label(f"当前策略：{ws.strategy_label} · 按研究日收盘估算份额，预留5%现金；实际按次日开盘成交。", "muted"))
             table = Table(pd.DataFrame([asdict(o) for o in ticket]).rename(columns={"symbol": "代码", "side": "方向", "quantity": "份额"}))
             layout.addWidget(table)
             layout.addWidget(button("提交整批模拟订单", dialog.accept, "primary"))
@@ -457,9 +460,14 @@ class MainWindow(QtWidgets.QMainWindow):
                 self._request_id = str(uuid4())
                 ws.set_date(fills[0]["fill_date"])
                 self.bottom.setCurrentIndex(1)
-                self.message(f"整批调仓完成：{len(fills)}笔成交。")
+                self.message(f"整批调仓完成（{ws.strategy_label}）：{len(fills)}笔成交。")
         except TradingError as exc:
             self.show_error(str(exc))
+
+    def on_agent_executed(self, fill_date):
+        self.workspace.set_date(fill_date)
+        self.bottom.setCurrentIndex(1)
+        self.message(f"Agent 工作流已获人工批准并原子成交（成交日 {fill_date}）。")
 
     def advance_day(self):
         ws = self.workspace

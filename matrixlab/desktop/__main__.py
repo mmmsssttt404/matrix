@@ -34,6 +34,7 @@ def main(argv=None):
         def self_check():
             import json
             import pandas as pd
+            from ..agent import run_workflow
             from ..analytics import analyze
             from ..research import screen
             from ..trading import Order
@@ -44,6 +45,13 @@ def main(argv=None):
                 day = pd.Timestamp(ws.days[int(len(ws.days) * .7)])
                 risk = analyze(ws.prices, ws.symbols, day)
                 run = screen(ws.documents, "fixture", day, ws.settings, "keyword")
+                trace = run_workflow(
+                    ws.prices, ws.documents, "fixture", day, ws.settings,
+                    mode="keyword", operator="any", strategy="erc",
+                    broker_path=ws.broker.path, approve_execution=False,
+                )
+                assert not ws.broker.exists()
+                assert trace.strategy == "erc" and len(trace.steps) == 5
                 ws.broker.initialize(100000, day)
                 ws.set_date(day)
                 window.refresh_account()
@@ -52,7 +60,7 @@ def main(argv=None):
                 assert len(ws.broker.state()[3]) == 1
                 assert abs(risk.weights.sum() - 1) < 1e-7
                 assert run.matches
-                report = {"ok": True, "platform": sys.platform, "checks": ["native-window", "matrix", "keyword", "paper-order"]}
+                report = {"ok": True, "platform": sys.platform, "checks": ["native-window", "matrix", "keyword", "agent-workflow", "paper-order"]}
                 code = 0
             except Exception as exc:
                 report, code = {"ok": False, "error": str(exc)}, 1

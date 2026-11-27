@@ -27,8 +27,9 @@
 
 $$\frac{\|\Delta x\|}{\|x\|} \le \|A\|\|A^{-1}\| \cdot \frac{\|\Delta b\|}{\|b\|} = \kappa(A)\frac{\|\Delta b\|}{\|b\|}.$$
 
-> **【增补-知识关联（联动题目二组合权重稳定性）】**  
-> 在题目二的无约束最小方差闭式解 $w^* = \frac{\Sigma^{-1}\mathbf{1}}{\mathbf{1}^T \Sigma^{-1}\mathbf{1}}$ 中，求解核心就是线性方程组 $\Sigma z = \mathbf{1}$！当资产收益率高度相关或样本量 $T$ 相对资产数 $N$ 偏小时，样本协方差 $\Sigma$ 的 2-条件数 $\kappa_2(\Sigma) = \sigma_1/\sigma_n = \lambda_{\max}/\lambda_{\min}$ 会急剧膨胀（如 12 只美股上 $\kappa_2(\Sigma)=48.30$），导致极小的协方差估计误差被剧烈放大为极端权重与高换手率。这正是 Ledoit–Wolf 谱收缩 $\Sigma_\alpha = (1-\alpha)\Sigma + \alpha\mu I$ 将条件数从 `48.30` 压低至 `30.78`、并同步降低样本外换手率的根本线性代数机制。
+> **【增补-知识关联（联动题目二组合权重稳定性与病态扰动实算）】**  
+> 1. **数值算例（$0.5\%$ 误差放大 $199\times$）**：考察两只高度相关资产的相关矩阵 $\Sigma_{\text{ill}} = \begin{pmatrix} 1 & 0.99 \\ 0.99 & 1 \end{pmatrix}$，其特征值为 $1.99$ 与 $0.01$，故 $\kappa_2(\Sigma_{\text{ill}}) = 199$。对线性系统 $\Sigma_{\text{ill}} z = (1, 1)^T$ 施加仅 $0.5\%$ 相对大小的反相扰动 $\Delta b = (0.005, -0.005)^T$（$\|\Delta b\|_2/\|b\|_2 = 0.005$），解向量相对漂移高达 **$\|\Delta z\|_2/\|z\|_2 = 0.995 = 99.5\%$**，精确触发了上界放大倍数 `199×`（已由 `verify_manuscript_math.py` 校验）。
+> 2. **为何 Gram 阵会让条件数平方恶化**：在题目二的无约束最小方差闭式解 $w^* = \frac{\Sigma^{-1}\mathbf{1}}{\mathbf{1}^T \Sigma^{-1}\mathbf{1}}$ 中，核心是解线性系统 $\Sigma z = \mathbf{1}$，其中 $\Sigma = \frac{252}{T-1} X^T X$。由于 $\sigma_i(X^T X) = \sigma_i(X)^2$，有严格恒等式 **$\kappa_2(\Sigma) = \kappa_2(X)^2$**！在 12 只美股真实日收益率矩阵上，$\kappa_2(X) = 6.95$，形成协方差阵后直接平方放大至 $\kappa_2(\Sigma) = 48.30$；这正是 Ledoit–Wolf 谱收缩 $\Sigma_\alpha = (1-\alpha)\Sigma + \alpha\mu I$ 将条件数从 `48.30` 压低至 `30.78`、并显著降低样本外换手率的根本线性代数机制。
 
 ---
 
@@ -50,3 +51,21 @@ $$\frac{\|\Delta x\|}{\|x\|} \le \|A\|\|A^{-1}\| \cdot \frac{\|\Delta b\|}{\|b\|
 > 1. **图像压缩（`Lec0` p.12）**：$500\times 500$ 灰度图像矩阵取前 $k$ 阶截断 SVD，存储量由 $mn$ 降至 $k(m+n+1)$，压缩比 $5\text{–}12.5\times$ 时因奇异值快速衰减仍能保持清晰轮廓；
 > 2. **推荐系统矩阵分解（`Lec0` p.16）**：评分矩阵 $R \approx P Q^T$ 本质是带观测缺失与 $L_2$ 正则化的低秩分解；
 > 3. **大语言模型微调（LoRA）与推理压缩（DeepSeek-V3 MLA，`Lec0` p.24）**：LoRA 将权重更新量参数化为低秩矩阵 $\Delta W = B A$（秩 $r \ll \min(d_{\text{in}}, d_{\text{out}})$）；DeepSeek-V3 的多头潜在注意力（MLA）将高维 Key-Value 矩阵联合低秩投影到紧凑潜向量 $c_t^{KV}$ 缓存，再在推理时升维恢复，本质上都是利用权重/特征矩阵的近似低秩结构换取数量级的显存与带宽节省。
+
+---
+
+## 四、真实美股收益率矩阵的 SVD 谱衰减与 Eckart–Young 低秩重构实测（联动题目二）
+
+为将本章抽象的奇异值谱、条件数平方效应与 Eckart–Young–Mirsky 最佳低秩逼近定理落地到真实数据，我们对题目二 `data/prices.csv` 中 12 只美股在 `2025-01-27` 之前 $T=252$ 个交易日的去均值日收益率矩阵 $X \in \mathbb{R}^{252\times 12}$ 直接执行瘦奇异值分解 $X = U \Sigma V^T$（全量指标经 [verify_manuscript_math.py](verify_manuscript_math.py) 自动校验）：
+
+- **奇异值分布与条件数平方律**：前四大奇异值为 $\sigma_1 = 0.6430$、$\sigma_2 = 0.3812$、$\sigma_3 = 0.2675$、$\sigma_4 = 0.2509$，最小奇异值 $\sigma_{12} = 0.0925$。数据矩阵条件数 $\kappa_2(X) = \sigma_1/\sigma_{12} = 6.9497$，其平方 $6.9497^2 = 48.2986$ 与第八章中样本协方差阵 $\Sigma = \frac{252}{251} X^T X$ 的谱条件数 $\kappa_2(\Sigma) = 48.30$ 精确一致。
+- **Eckart–Young–Mirsky 定理逐秩实测对照**：
+
+| 截断秩 $k$ | 累计 Frobenius 能量 $E_k = \frac{\sum_{i=1}^k \sigma_i^2}{\|X\|_F^2}$ | 实测相对 Frobenius 误差 $\frac{\|X-X_k\|_F}{\|X\|_F}$ | 实测 2-范数误差 $\|X-X_k\|_2$（严格等于 $\sigma_{k+1}$） | 金融因子解释 |
+|---:|---:|---:|---:|---|
+| `k = 1` | `46.36%` | `73.24%` | `0.381233` | 单一市场公共波动因子（领头科技股高弹性主导） |
+| `k = 3` | `70.69%` | `54.14%` | `0.250927` | 市场 + 科技成长/防御价值 + 行业分化（仅 25% 维度保留超七成能量） |
+| `k = 6` | `87.41%` | `35.49%` | `0.180109` | 半秩压缩即可捕获 87.4% 收益率总平方能量，过滤尾部特质噪声 |
+
+![真实12只美股收益率矩阵SVD谱衰减与Eckart-Young重构误差](figures/fig4_real_returns_svd_eckart_young.png)  
+*图 6.1：题目二真实 12 只美股去均值日收益率矩阵 $X\in\mathbb{R}^{252\times 12}$（`2025-01-27`）的奇异值谱衰减与 $\kappa_2(X)^2=\kappa_2(\Sigma)$ 验证（左），以及 Eckart–Young–Mirsky 截断秩 $k$ 累计能量与相对 Frobenius 重构误差曲线（右，由 `verify_manuscript_math.py` 自动绘制）。*

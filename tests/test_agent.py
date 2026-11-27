@@ -58,3 +58,17 @@ def test_agent_workflow_rejects_mismatched_broker_clock(prices, documents, tmp_p
             prices, documents, "cloud", day1, settings,
             mode="keyword", operator="any", broker_path=broker_path, approve_execution=False,
         )
+
+
+def test_agent_workflow_supports_erc_strategy(prices, documents, tmp_path):
+    day = str(prices.date.unique()[-30].date())
+    broker_path = tmp_path / "erc.sqlite3"
+    settings = Settings(tmp_path, "jev", "", "")
+    trace = run_workflow(
+        prices, documents, "cloud", day, settings,
+        mode="keyword", operator="any", use_ledoit_wolf=True, strategy="erc",
+        broker_path=broker_path, approve_execution=True,
+    )
+    assert trace.strategy == "erc"
+    assert trace.diagnostics["target_weights"] == trace.diagnostics["erc_weights"]
+    assert len(trace.fills) >= 1

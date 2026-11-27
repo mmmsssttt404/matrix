@@ -88,3 +88,44 @@ def test_workspace_service_configuration_is_not_taken_from_another_window(tmp_pa
     assert first.settings.service_url == "https://first.example"
     assert second.settings.service_url == "https://second.example"
     assert second.settings.service_token == "second-token"
+
+
+def test_native_agent_tab_preview_and_explicit_approval(desktop, qtbot):
+    ws = desktop.workspace
+    day = pd.Timestamp(ws.days[-30])
+    ws.set_date(day)
+    desktop.navigate(3)
+    assert desktop.pages.currentIndex() == 3
+    desktop.agent.query.setPlainText("cloud")
+    desktop.agent.strategy.setCurrentIndex(1)  # ERC risk parity
+    qtbot.mouseClick(desktop.agent.preview_btn, QtCore.Qt.MouseButton.LeftButton)
+    qtbot.waitUntil(lambda: not desktop._jobs, timeout=10000)
+    assert desktop.agent.trace is not None
+    assert desktop.agent.trace.strategy == "erc"
+    assert desktop.agent.trace.approved_execution is False
+    assert not ws.broker.exists()
+    assert desktop.agent.steps_table.frame_model.rowCount() == 5
+    assert desktop.agent.approve_btn.isEnabled()
+
+    desktop.agent.approve_now(confirm=False)
+    assert desktop.agent.trace.approved_execution is True
+    assert ws.broker.exists()
+    assert desktop.orders.frame_model.rowCount() >= 1
+    assert desktop.bottom.currentIndex() == 1
+
+
+def test_native_research_jev_controls_and_portfolio_erc_switch(desktop, qtbot):
+    desktop.navigate(1)
+    assert desktop.research.jev_op.count() == 5
+    desktop.research.mode.setCurrentIndex(1)
+    desktop.research.jev_op.setCurrentIndex(4)  # Prune-First
+    assert desktop.research.prune_k.isEnabled()
+    assert desktop.research.prune_k.value() == 3
+
+    desktop.navigate(2)
+    qtbot.mouseClick(desktop.portfolio.calculate, QtCore.Qt.MouseButton.LeftButton)
+    qtbot.waitUntil(lambda: not desktop._jobs, timeout=10000)
+    assert desktop.workspace.risk_strategy == "min_var"
+    desktop.portfolio.strategy.setCurrentIndex(1)
+    assert desktop.workspace.risk_strategy == "erc"
+    assert desktop.workspace.target_weights.equals(desktop.workspace.risk.risk_parity_weights)

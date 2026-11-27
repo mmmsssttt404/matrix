@@ -1,16 +1,28 @@
-# 运行说明
+# 运行说明与完整演示手册
 
-**主交付是 Qt 桌面版。** Windows 用户解压发行包后直接运行 `MatrixWorkbench.exe`；源码启动：
+**主交付是 Qt 原生桌面版（四大工作台：行情工作台 / 公司研究 / 矩阵组合 / Agent 工作流）。** Windows 用户解压发行包 `MatrixWorkbench-Windows-x64-v0.3.0.zip` 后，保留同目录 `_internal/` 文件夹，直接双击 `MatrixWorkbench.exe`（或 `start-windows.cmd`）运行，无需安装 Python；源码启动：
 
 ```bash
-python -m matrixlab.desktop
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements-desktop.lock
+.venv/bin/python -m matrixlab.cli fetch
+.venv/bin/python -m matrixlab.cli archive --asof 2024-12-31
+.venv/bin/python -m matrixlab.desktop
 ```
 
-下面的 Streamlit 流程保留为调试/对照界面，不是当前主界面。
+## 原生桌面端完整端到端演示（4 步闭环）
 
-## 安装和启动（Streamlit 调试界面）
+1. **准备真实数据与研究日期（行情工作台，`Ctrl+1`）**：首次启动空工作区可点击界面中央“下载课程研究数据”（或在菜单栏点击 `文件 → 获取历史百科存档(2024-12-31)`）；将顶部研究日期设为 `2025-01-27`，可在左侧自选股列表切换标的并缩放 K 线 / MA20。
+2. **语义/关键词防穿越筛选（公司研究，`Ctrl+2`）**：选择“离线关键词”（全语料库 BM25，支持 AND/OR）或“JEVDB语义”（支持 `jev_holds`、`jev_probability` 阈值 $\tau$、`jev_choose`、`jev_score` 与 `Prune-First` 粗排剪枝，默认最优 `K=3`）。输入 `cloud software` 检索，系统严格只评估 `available_at <= 2025-01-27` 的历史资料；双击任意命中行查看原文与署名链接，点击“加入组合研究”自动带入股票池与截止日期。
+3. **矩阵诊断、收缩优化与策略下单（矩阵组合，`Ctrl+3`）**：勾选 `Ledoit-Wolf最优α*`（或手工调 $\alpha$）并点击“计算组合”，在 3 个子标签页依次检视：
+   - **权重与协方差**：对比只做多 QP、无约束闭式解与 Spinu 凸风险平价（ERC），查看欧拉风险分解、年化协方差热力图与 KKT 互补松弛残差（`~3.96e-9`）；可随时切换顶部“调仓目标”为 `最小方差(QP)` 或 `风险平价(ERC)`，并导出多列完整权重诊断 CSV；
+   - **PCA 与收缩路径**：查看相关系数矩阵 PCA 解释方差/前 3 主成分载荷，以及 $\alpha \in [0, 1]$ 上条件数与收缩后最小特征值 $\lambda_{\min}(\Sigma_\alpha)$ 的单调演化；
+   - **样本外与滚动回测**：点击“运行月度滚动对比(含ERC与LW)”，对比 21 次月度调仓的累计收益、夏普比率与年化换手率。
+4. **四层 Agent 编排与人工审批撮合（Agent 工作流，`Ctrl+4`）**：输入自然语言研究需求，选择目标策略（`最小方差(QP)` 或 `风险平价(ERC)`）并点击“运行四层工作流（预览）”。界面按 `Preamble → Plan → Retrieve → Risk → Proposal` 逐行展示 5 步轨迹、Skill 名称、耗时与风险等级（`LOW_AUTO` / `MEDIUM_CONFIRM` / `HIGH_EXPLICIT_APPROVAL`），此时严格只读、不改写 `paper.sqlite3`。核对调仓提案无误后，点击“人工批准并执行撮合”并在二次确认弹窗点选确认，系统立即按所见即所得清单在 SQLite `BEGIN IMMEDIATE` 原子事务中以次日复权开盘价撮合，自动推进模拟日期、刷新右侧账户权益与底部成交表，并支持导出审计轨迹 JSON。
 
-在仓库根目录使用Linux x86-64与Python3.12+，推荐实测版本Python3.13。JEVDB预编译扩展绑定DuckDB1.4.3，不能单独升级DuckDB。
+## Streamlit 调试对照界面（Linux / 开发环境）
+
+在仓库根目录使用 Linux x86-64 与 Python 3.12+（实测 Python 3.13）。JEVDB 预编译扩展绑定 `duckdb==1.4.3`，不能单独升级 DuckDB。
 
 ```bash
 python3 -m venv .venv
@@ -22,30 +34,23 @@ TMPDIR="$PWD/.cache/tmp" PIP_CACHE_DIR="$PWD/.cache/pip" .venv/bin/python -m pip
 .venv/bin/streamlit run app.py
 ```
 
-浏览器打开终端显示的本机地址，默认http://127.0.0.1:8501。服务绑定本机；GitHub保存协作代码，不自动托管运行实例。`doctor`检查扩展和凭证存在性，不发送模型请求。
+浏览器打开终端显示的本机地址，默认 `http://127.0.0.1:8501`。`doctor` 检查扩展和凭证存在性，不发送模型请求。
 
-`fetch`获取12只美股的真实日线和当前公司简介，排除纽约当天可能尚未完成的日线。`archive`获取2024年末之前的Wikipedia公司介绍版本，用于有依据的历史筛选。每条记录保留来源链接、历史版本ID或获取时间；某个下载失败会记入manifest，全部失败明确报错。首次下载后，数值计算与模拟交易无需联网。原始数据不进入公开仓库。
+如需独立工作区，在本地 `.env` 设置绝对路径 `MATRIX_DATA_DIR` 后重启。已有模拟账户的工作区禁止直接覆盖行情，避免破坏账本价格基准。
 
-如需另一份数据或独立账户，在本地.env设置绝对路径`MATRIX_DATA_DIR`，然后重启。已有模拟账户的工作区不能直接覆盖行情，避免改变账本的价格基准。多个小组成员应分别使用自己的数据目录；当前原型没有多用户登录功能。
-
-## 一条完整演示
-
-1. 在“公司研究”中选2025-01-27作为资料可用日期，选择“离线关键词基线”，输入`cloud software`并检索。默认要求全部词命中（AND）并按BM25排序；可切换OR，或用引号指定短语。历史Wikipedia版本能参与筛选，2026年下载的当前公司简介会被排除。结果标明基线类型、相关度、原文、来源和时间。
-2. 点击“将这些公司用于组合研究”，进入“矩阵与组合”，计算协方差、最小方差权重和条件数。默认回看252条共同有效收益率，收缩系数0.05；展开“矩阵推导与数值诊断”可查看PCA解释方差与载荷、风险贡献分解、无约束闭式解对照、收缩路径，以及样本外等权比较。
-3. 在“模拟交易”中以2025-01-27为起始日创建100000美元账户。研究日期与账户时钟一致时可生成整批调仓单；份额按当日收盘估算，预留5%现金。
-4. 确认订单后，程序使用下一交易日的复权开盘价并计入滑点和手续费。资金不足或任何一单无效时整批回滚。也可手动提交一只股票的订单。
-5. 推进模拟日期，查看权益和逐笔成交，导出研究JSON、权重CSV及成交CSV。界面变化后须重新计算权重；账户时钟不能回退。
+## CLI 快捷复现与评测命令
 
 一键数值演示与四层 Agent 工作流演示（不自动执行高风险写库，需 `--approve` 显式授权）：
 
 ```bash
 .venv/bin/python -m matrixlab.cli demo --asof 2025-01-27
 .venv/bin/python -m matrixlab.cli research 'cloud software' --asof 2025-01-27 --mode keyword --operator all
-.venv/bin/python -m matrixlab.cli research 'cloud computing' --asof 2025-01-27 --mode jevdb --jev-op prune_then_decide --prune-k 6
-.venv/bin/python -m matrixlab.cli agent 'cloud software' --asof 2025-01-27 --mode keyword --operator any
-.venv/bin/python -m matrixlab.cli agent 'cloud software' --asof 2025-01-27 --mode keyword --operator any --approve
+.venv/bin/python -m matrixlab.cli research 'cloud computing' --asof 2025-01-27 --mode jevdb --jev-op prune_then_decide --prune-k 3
+.venv/bin/python -m matrixlab.cli agent 'cloud software' --asof 2025-01-27 --mode keyword --operator any --strategy erc
+.venv/bin/python -m matrixlab.cli agent 'cloud software' --asof 2025-01-27 --mode keyword --operator any --strategy erc --approve
 .venv/bin/python evaluation/evaluate.py --mode keyword --operator all
 .venv/bin/python evaluation/evaluate.py --mode prune_ablation
+.venv/bin/python manuscript/verify_manuscript_math.py --plot
 ```
 
 `evaluation/evaluate.py` 默认使用 `evaluation/documents.csv` 的12家公司人工标注集（40条查询），输出 precision/recall/F1/MRR；换用真实数据时加 `--documents data/documents.csv`。评估结果在 `evaluation/results/`。

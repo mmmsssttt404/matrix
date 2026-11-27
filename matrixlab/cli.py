@@ -46,6 +46,7 @@ def main(argv=None):
     agent_cmd.add_argument("--threshold", type=float, default=0.5)
     agent_cmd.add_argument("--prune-k", type=int, default=None)
     agent_cmd.add_argument("--fixed-alpha", type=float, default=None, help="指定固定收缩系数；默认使用Ledoit-Wolf最优收缩")
+    agent_cmd.add_argument("--strategy", choices=["min_var", "erc"], default="min_var", help="组合权重策略：最小方差(min_var)或风险平价(erc)")
     agent_cmd.add_argument("--approve", action="store_true", help="显式批准高风险模拟下单写入SQLite账本")
     demo = commands.add_parser("demo", help="用真实行情演示矩阵分析、样本外比较及一次模拟建仓")
     demo.add_argument("--asof")
@@ -78,10 +79,11 @@ def main(argv=None):
                 threshold=args.threshold, prune_k=args.prune_k,
                 alpha=0.05 if args.fixed_alpha is None else args.fixed_alpha,
                 use_ledoit_wolf=args.fixed_alpha is None,
+                strategy=args.strategy,
                 approve_execution=args.approve,
             )
             path = trace.save(settings.data_dir / "agent_runs")
-            result = {"trace_id": trace.trace_id, "selected_symbols": trace.selected_symbols,
+            result = {"trace_id": trace.trace_id, "strategy": trace.strategy, "selected_symbols": trace.selected_symbols,
                       "approved_execution": trace.approved_execution, "proposed_orders": len(trace.proposed_orders),
                       "fills": len(trace.fills), "record": str(path)}
         else:

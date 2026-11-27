@@ -107,9 +107,77 @@ def verify_lec9_examples():
     X_1 = np.outer(U_s[:, 0] * s_s[0], Vt_s[0, :])
     assert np.isclose(np.linalg.norm(X - X_1, 2), s_s[1])
     assert np.isclose(np.linalg.norm(X - X_1, "fro"), np.sqrt(np.sum(s_s[1:] ** 2)))
+
+    # 7. Hand-worked 3x3 integer Cholesky & LDL^T example (Chapter 8 §8.4.1)
+    A_chol = np.array([[4.0, 2.0, -2.0], [2.0, 10.0, 2.0], [-2.0, 2.0, 6.0]])
+    L_unit = np.array([[1.0, 0.0, 0.0], [0.5, 1.0, 0.0], [-0.5, 1.0 / 3.0, 1.0]])
+    D_piv = np.diag([4.0, 9.0, 4.0])
+    R_upper = np.array([[2.0, 1.0, -1.0], [0.0, 3.0, 1.0], [0.0, 0.0, 2.0]])
+    assert np.allclose(L_unit @ D_piv @ L_unit.T, A_chol)
+    assert np.allclose(R_upper.T @ R_upper, A_chol)
+    lpms = [float(np.linalg.det(A_chol[:k, :k])) for k in (1, 2, 3)]
+    assert np.allclose(lpms, [4.0, 36.0, 144.0])
+    assert np.allclose([lpms[0], lpms[1] / lpms[0], lpms[2] / lpms[1]], [4.0, 9.0, 4.0])
+    report["cholesky_3x3_example"] = {
+        "leading_principal_minors": [4, 36, 144],
+        "pivots_D": [4, 9, 4],
+        "eigenvalues": [round(float(v), 4) for v in np.linalg.eigvalsh(A_chol)],
+    }
+
+    # 8. PageRank Google Matrix & Power Iteration convergence (Chapter 8 §8.1.3 / Lec0 p.15)
+    P_pr = np.array([
+        [0.0, 0.0, 1.0, 0.5],
+        [0.5, 0.0, 0.0, 0.0],
+        [0.5, 1.0, 0.0, 0.5],
+        [0.0, 0.0, 0.0, 0.0],
+    ])
+    d_damp = 0.85
+    G_pr = d_damp * P_pr + (1.0 - d_damp) / 4.0 * np.ones((4, 4))
+    assert np.allclose(G_pr.sum(axis=0), np.ones(4))
+    eigs_pr = np.linalg.eigvals(G_pr)
+    mags_pr = np.sort(np.abs(eigs_pr))[::-1]
+    assert np.isclose(mags_pr[0], 1.0)
+    assert mags_pr[1] <= d_damp + 1e-12
+    x_pr = np.ones(4) / 4.0
+    for _ in range(200):
+        x_pr = G_pr @ x_pr
+    pi_star = x_pr / x_pr.sum()
+    assert np.allclose(G_pr @ pi_star, pi_star, atol=1e-12)
+    xk = np.ones(4) / 4.0
+    errs = {}
+    for k in range(1, 21):
+        xk = G_pr @ xk
+        if k in (1, 5, 10, 20):
+            errs[f"k={k}"] = round(float(np.linalg.norm(xk - pi_star, 1)), 6)
+    report["pagerank_power_iteration"] = {
+        "damping": d_damp,
+        "abs_eigenvalues": [round(float(v), 6) for v in mags_pr],
+        "stationary_pi": [round(float(v), 6) for v in pi_star],
+        "l1_error_trace": errs,
+    }
+
+    # 9. Chapter 5/6 ill-conditioned 2x2 linear perturbation example (kappa_2 = 199)
+    S_ill = np.array([[1.0, 0.99], [0.99, 1.0]])
+    b_vec = np.array([1.0, 1.0])
+    db_vec = np.array([0.005, -0.005])
+    z_orig = np.linalg.solve(S_ill, b_vec)
+    z_pert = np.linalg.solve(S_ill, b_vec + db_vec)
+    rel_b = float(np.linalg.norm(db_vec) / np.linalg.norm(b_vec))
+    rel_z = float(np.linalg.norm(z_pert - z_orig) / np.linalg.norm(z_orig))
+    kappa_ill = float(np.linalg.cond(S_ill, 2))
+    assert np.isclose(kappa_ill, 199.0)
+    assert np.isclose(rel_z, kappa_ill * rel_b)
+    report["ill_conditioned_2x2"] = {
+        "kappa_2": round(kappa_ill, 4),
+        "rel_rhs_perturbation": round(rel_b, 6),
+        "rel_sol_perturbation": round(rel_z, 6),
+        "amplification": round(rel_z / rel_b, 2),
+    }
+
     report["core_theorems_verified"] = [
         "Schur", "Weyl", "Cauchy_Interlacing", "PSD_Counterexamples",
-        "Jordan_Wielandt_SVD", "Eckart_Young_Mirsky"
+        "Jordan_Wielandt_SVD", "Eckart_Young_Mirsky",
+        "Cholesky_3x3", "PageRank_Power_Iteration", "Condition_Perturbation_2x2",
     ]
     return report
 
@@ -409,6 +477,75 @@ def _generate_figures_qt(prices_path: Path | None, fig_dir: Path):
         p.drawText(QtCore.QPointF(r2.left() + 18, r2.top() + 50), f"Orange curve: Cumulative variance (Top 3 = {cum[2]:.1f}%, Top 6 = {cum[5]:.1f}%)")
         p.end()
         img.save(str(fig_dir / "fig3_real_cov_spectrum_shrinkage.png"))
+
+        # Fig 4: Chapter 5/6 Real 12-stock return matrix SVD decay & Eckart-Young-Mirsky reconstruction
+        R_df = res.returns
+        X_mat = (R_df - R_df.mean(axis=0)).to_numpy(dtype=float)
+        U_r, s_r, Vt_r = np.linalg.svd(X_mat, full_matrices=False)
+        tot_sq = float(np.sum(s_r ** 2))
+        energy_pct = np.cumsum(s_r ** 2) / tot_sq * 100.0
+        rel_err_pct = np.array([
+            np.linalg.norm(X_mat - (U_r[:, :k] * s_r[:k]) @ Vt_r[:k, :], "fro") / np.sqrt(tot_sq) * 100.0
+            for k in range(1, len(s_r) + 1)
+        ])
+        for k in range(1, len(s_r)):
+            assert np.isclose(np.linalg.norm(X_mat - (U_r[:, :k] * s_r[:k]) @ Vt_r[:k, :], 2), s_r[k])
+
+        img, p = make_canvas(1500, 620)
+        # Left panel: Singular value spectrum sigma_k
+        r1 = QtCore.QRectF(95, 65, 620, 460)
+        ymax_s = float(np.ceil(s_r[0] * 10.0) / 10.0 + 0.15)
+        yt_s = [(round(v, 2), f"{v:.2f}") for v in np.linspace(0.0, ymax_s, 6)]
+        mx1, my1 = draw_panel_axes(
+            p, r1, 0.3, 12.7, 0.0, ymax_s,
+            "12-Stock Returns X (252x12): Singular Values",
+            "Singular Value Index k", "Singular Value sigma_k",
+            xticks=[(i, f"s{i}") for i in range(1, 13)],
+            yticks=yt_s,
+        )
+        bw = (mx1(2) - mx1(1)) * 0.56
+        p.setPen(QtGui.QPen(QtGui.QColor("#1d4ed8"), 1.2))
+        p.setBrush(QtGui.QBrush(QtGui.QColor(37, 99, 235, 175)))
+        for i, sv_val in enumerate(s_r, start=1):
+            bx = mx1(i) - bw / 2
+            by = my1(sv_val)
+            p.drawRect(QtCore.QRectF(bx, by, bw, my1(0) - by))
+        p.setFont(QtGui.QFont("DejaVu Sans", 10.5))
+        p.setPen(QtGui.QColor("#1e293b"))
+        p.drawText(QtCore.QPointF(r1.left() + 18, r1.top() + 26), f"sigma_1 = {s_r[0]:.4f}, sigma_12 = {s_r[-1]:.4f}")
+        p.setPen(QtGui.QColor("#dc2626"))
+        p.drawText(QtCore.QPointF(r1.left() + 18, r1.top() + 48), f"kappa_2(X) = {s_r[0]/s_r[-1]:.2f}  (= sqrt(kappa_2(Sigma)) = {np.sqrt(res.condition_before):.2f})")
+
+        # Right panel: Eckart-Young cumulative energy vs relative Frobenius error
+        r2 = QtCore.QRectF(820, 65, 620, 460)
+        mx2, my2 = draw_panel_axes(
+            p, r2, 0.5, 12.5, 0.0, 122.0,
+            "Eckart-Young Rank-k Energy & Recon Error",
+            "Truncation Rank k", "Percentage (%)",
+            xticks=[(i, f"k={i}") for i in range(1, 13)],
+            yticks=[(0, "0%"), (20, "20%"), (40, "40%"), (60, "60%"), (80, "80%"), (100, "100%")],
+        )
+        pts_e = [QtCore.QPointF(mx2(i), my2(v)) for i, v in enumerate(energy_pct, start=1)]
+        pts_r = [QtCore.QPointF(mx2(i), my2(v)) for i, v in enumerate(rel_err_pct, start=1)]
+        p.setPen(QtGui.QPen(QtGui.QColor("#0d9488"), 2.8))
+        for i in range(len(pts_e) - 1):
+            p.drawLine(pts_e[i], pts_e[i + 1])
+        p.setBrush(QtGui.QBrush(QtGui.QColor("#0d9488")))
+        for pt in pts_e:
+            p.drawEllipse(pt, 4.2, 4.2)
+        p.setPen(QtGui.QPen(QtGui.QColor("#dc2626"), 2.6, QtCore.Qt.PenStyle.DashLine))
+        for i in range(len(pts_r) - 1):
+            p.drawLine(pts_r[i], pts_r[i + 1])
+        p.setBrush(QtGui.QBrush(QtGui.QColor("#dc2626")))
+        for pt in pts_r:
+            p.drawEllipse(pt, 4.0, 4.0)
+        p.setFont(QtGui.QFont("DejaVu Sans", 10.5))
+        p.setPen(QtGui.QColor("#0f766e"))
+        p.drawText(QtCore.QPointF(r2.left() + 18, r2.top() + 26), f"Teal solid: Cumulative energy E_k (k=3: {energy_pct[2]:.1f}%, k=6: {energy_pct[5]:.1f}%)")
+        p.setPen(QtGui.QColor("#dc2626"))
+        p.drawText(QtCore.QPointF(r2.left() + 18, r2.top() + 48), f"Red dashed: Rel Fro error (k=3: {rel_err_pct[2]:.1f}%, k=6: {rel_err_pct[5]:.1f}%)")
+        p.end()
+        img.save(str(fig_dir / "fig4_real_returns_svd_eckart_young.png"))
     _ = app
 
 
@@ -522,6 +659,65 @@ def generate_figures(prices_path: Path | None):
         fig.savefig(fig_dir / "fig3_real_cov_spectrum_shrinkage.png", dpi=180)
         plt.close(fig)
 
+        # Figure 4: Real 12-stock return matrix SVD spectrum & Eckart-Young-Mirsky error
+        X_mat = (res.returns - res.returns.mean(axis=0)).to_numpy(dtype=float)
+        U_r, s_r, Vt_r = np.linalg.svd(X_mat, full_matrices=False)
+        tot_sq = float(np.sum(s_r ** 2))
+        energy_pct = np.cumsum(s_r ** 2) / tot_sq * 100.0
+        rel_err_pct = np.array([
+            np.linalg.norm(X_mat - (U_r[:, :k] * s_r[:k]) @ Vt_r[:k, :], "fro") / np.sqrt(tot_sq) * 100.0
+            for k in range(1, len(s_r) + 1)
+        ])
+        fig, axes = plt.subplots(1, 2, figsize=(10.5, 4.2), dpi=180)
+        k_idx = np.arange(1, len(s_r) + 1)
+        axes[0].bar(k_idx, s_r, color="#2563eb", alpha=0.82)
+        axes[0].set_xticks(k_idx)
+        axes[0].set_xticklabels([f"s{i}" for i in k_idx], fontsize=8)
+        axes[0].set_ylabel("Singular Value sigma_k")
+        axes[0].set_title(f"Return Matrix X (252x12) SVD: kappa_2(X)={s_r[0]/s_r[-1]:.2f}")
+        axes[0].grid(alpha=0.25)
+
+        axes[1].plot(k_idx, energy_pct, color="#0d9488", lw=2.0, marker="o", ms=4, label="Cumulative Energy E_k (%)")
+        axes[1].plot(k_idx, rel_err_pct, color="#dc2626", lw=2.0, ls="--", marker="s", ms=4, label="Rel Fro Error ||X-X_k||_F/||X||_F (%)")
+        axes[1].set_xticks(k_idx)
+        axes[1].set_xticklabels([f"k={i}" for i in k_idx], fontsize=8)
+        axes[1].set_ylabel("Percentage (%)")
+        axes[1].set_title("Eckart-Young-Mirsky Rank-k Approximation")
+        axes[1].grid(alpha=0.25)
+        axes[1].legend(fontsize=8.5)
+        fig.tight_layout()
+        fig.savefig(fig_dir / "fig4_real_returns_svd_eckart_young.png", dpi=180)
+        plt.close(fig)
+
+
+def verify_real_svd(prices_path: Path | None):
+    if not prices_path or not prices_path.exists():
+        return None
+    from matrixlab.analytics import analyze
+    from matrixlab.data import read_prices
+
+    prices = read_prices(prices_path)
+    syms = sorted(prices.symbol.unique())
+    res = analyze(prices, syms, "2025-01-27", lookback=252, alpha=0.05)
+    X_mat = (res.returns - res.returns.mean(axis=0)).to_numpy(dtype=float)
+    U_r, s_r, Vt_r = np.linalg.svd(X_mat, full_matrices=False)
+    tot_sq = float(np.sum(s_r ** 2))
+    energy = np.cumsum(s_r ** 2) / tot_sq
+    rel_err = [float(np.linalg.norm(X_mat - (U_r[:, :k] * s_r[:k]) @ Vt_r[:k, :], "fro") / np.sqrt(tot_sq)) for k in range(1, len(s_r) + 1)]
+    spec_err = [float(np.linalg.norm(X_mat - (U_r[:, :k] * s_r[:k]) @ Vt_r[:k, :], 2)) for k in range(1, len(s_r))]
+    assert np.allclose(spec_err, s_r[1:])
+    assert np.isclose((s_r[0] / s_r[-1]) ** 2, res.condition_before, rtol=1e-6)
+    return {
+        "shape": list(X_mat.shape),
+        "sigma_top4": [round(float(v), 6) for v in s_r[:4]],
+        "sigma_min": round(float(s_r[-1]), 6),
+        "kappa_2_X": round(float(s_r[0] / s_r[-1]), 4),
+        "kappa_2_Sigma": round(float(res.condition_before), 4),
+        "energy_k1_k3_k6": [round(float(energy[k - 1]), 4) for k in (1, 3, 6)],
+        "rel_fro_err_k1_k3_k6": [round(float(rel_err[k - 1]), 4) for k in (1, 3, 6)],
+        "spec_err_k1_k3_k6": [round(float(spec_err[k - 1]), 6) for k in (1, 3, 6)],
+    }
+
 
 def main():
     parser = argparse.ArgumentParser(description="Verify Task 1 manuscript math and optionally generate figures")
@@ -532,6 +728,9 @@ def main():
         "examples_and_theorems": verify_lec9_examples(),
         "exercises_1_to_10": verify_lec9_all_10_exercises(),
     }
+    svd_stats = verify_real_svd(args.prices)
+    if svd_stats is not None:
+        out["real_returns_svd"] = svd_stats
     if args.plot:
         generate_figures(args.prices)
         fig_dir = ROOT / "manuscript" / "figures"

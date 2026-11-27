@@ -68,6 +68,12 @@ $$c_k = (-1)^k s_k = (-1)^k \sum (\text{所有 } k\times k \text{ 主子式}), \
 ![Gerschgorin 圆盘与对角相似缩放收紧效果](figures/fig1_gerschgorin_scaling.png)  
 *图 8.1：`Lec9` p.11 矩阵的原始 Gerschgorin 行/列圆盘（左）与经 $D=\mathrm{diag}(1,1,5)$ 相似缩放后在 $-5$ 处收紧 5 倍的圆盘及精确特征值（右，由 `verify_manuscript_math.py` 自动绘制）。*
 
+> **【增补-现代应用与数值验算】Google PageRank 迭代与幂法收敛率（呼应 `Lec0` p.15）**  
+> 构造 4 节点有向网页图的列随机转移矩阵 $P = \begin{pmatrix} 0 & 0 & 1 & 0.5 \\ 0.5 & 0 & 0 & 0 \\ 0.5 & 1 & 0 & 0.5 \\ 0 & 0 & 0 & 0 \end{pmatrix}$ 与阻尼系数 $d=0.85$ 的 Google 矩阵 $G = dP + \frac{1-d}{4}\mathbf{1}\mathbf{1}^T$。因 $G>0$ 且列和为 $1$，由 Gerschgorin 列圆盘与 Perron–Frobenius 定理立得主特征值 $\rho(G)=\lambda_1=1$，且次主特征值模长严格受阻尼系数约束（$|\lambda_2|\le d$）。经 `verify_manuscript_math.py` 实测：
+> - $G$ 的特征值模长为 $\{1.000000,\; 0.601041,\; 0.601041,\; 0\}$（恰有 $|\lambda_2|=0.85/\sqrt{2}\approx 0.601041 < 0.85$）；
+> - 唯一平稳 PageRank 分布为 $\pi^* = (0.3797,\; 0.1989,\; 0.3839,\; 0.0375)^T$（节点 3 与节点 1 获最高权威分）；
+> - 从均匀分布 $x^{(0)}=\frac{1}{4}\mathbf{1}$ 出发做幂迭代 $x^{(k+1)}=Gx^{(k)}$，$L_1$ 误差 $\|x^{(k)}-\pi^*\|_1$ 以几何速率 $|\lambda_2|^k$ 衰减：$k=1$ 时 `0.1572` → $k=5$ 时 `0.0205` → $k=10$ 时 `0.00228` → $k=20$ 时已降至 **`1.2e-5`**。这直观说明阻尼因子 $d=0.85$ 本质上是在“保留原始链接拓扑”与“压低 $|\lambda_2|$ 加速幂迭代收敛”之间做谱权衡。参考：Meyer §7.10；Strang (2019) §I.6。
+
 ---
 
 ## 8.2 相似对角化、Schur 三角化与谱投影分解
@@ -187,6 +193,13 @@ $$\beta_i = \min_{\dim(\mathcal{W})=n-i+1}\max_{0\neq x\in\mathcal{W}} \left(\fr
 > 1. **误区一：“顺序主子式非负 $\Rightarrow$ 半正定”不成立！**  
 >    反例：$A = \begin{pmatrix} 0 & 0 \\ 0 & -1 \end{pmatrix}$。其一阶顺序主子式 $\Delta_1 = 0 \ge 0$、二阶顺序主子式 $\Delta_2 = \det(A) = 0 \ge 0$，但特征值为 $\{0, -1\}$，显然**不是**半正定矩阵！必须对每个阶数 $k=1,\dots,n$ 检查全部 $\binom{n}{k}$ 个 $k$ 阶主子式（共计 $2^n - 1$ 个主子式）均非负（该例中第 $(2,2)$ 一阶主子式为 $-1<0$ 立即否决）。  
 > 2. **误区二（修正 `Lec9` p.28 原文表述）**：`Lec9` p.28 写 *"When A has zero eigenvalues, there is no LU factorzation"*（沿袭了 Meyer p.566 将“LU 分解”限定于非奇异阵无零主元情形的口语化说法，且含拼写错 `factorzation`）。严格来说，**在精确算术下，任意对称半正定矩阵 $A$ 甚至仍存在无行交换的 $A=LDL^T$（$d_i\ge 0$，故 $A=LU$）与主对角元非负的 $A=R^TR$ 分解**——因为半正定阵在消元过程中一旦出现零主元 $s_{kk}=0$，由 $|s_{kj}|^2 \le s_{kk}s_{jj}=0$ 必强制剩余子阵的第 $k$ 行与第 $k$ 列全为零（见 Horn & Johnson Corollary 7.2.9；例如 $\mathrm{diag}(1,0) = I\cdot\mathrm{diag}(1,0)$）。真正失效的是：（a）**不存在**主对角元严格为正（非奇异）的 Cholesky 因子 $R$；（b）非负对角分解**不再唯一**；（c）浮点舍入误差会将精确零主元扰动为微小非零数引发数值崩溃，因此工程上必须采用带完全对称主元选择的秩揭示分解 $PAP^T = LDL^T$ 或 $PAP^T = R^TR$（Golub & Van Loan §4.2.8–4.2.9）。
+
+> **【增补-例题】$3\times 3$ 实对称正定阵的 $LDL^T$、Cholesky 分解与顺序主子式对照（呼应 `Lec9` p.27–30）**  
+> 考察实对称矩阵 $A = \begin{pmatrix} 4 & 2 & -2 \\ 2 & 10 & 2 \\ -2 & 2 & 6 \end{pmatrix}$：
+> 1. **无行交换对称消元（$LDL^T$）**：第一主元 $d_1=4$，乘子 $l_{21}=\frac{1}{2}$、$l_{31}=-\frac{1}{2}$；消去第一行/列后 Schur 补为 $\begin{pmatrix} 9 & 3 \\ 3 & 5 \end{pmatrix}$，得第二主元 $d_2=9$、$l_{32}=\frac{1}{3}$ 及第三主元 $d_3 = 5 - 3^2/9 = 4$。所有主元 $(4,9,4)>0$，立即判定 $A$ 严格正定！
+> 2. **唯一 Cholesky 上三角因子 $R = D^{1/2} L^T$**：取 $\sqrt{D}=\mathrm{diag}(2,3,2)$，立得全整数因子
+>    $$L = \begin{pmatrix} 1 & 0 & 0 \\ \frac{1}{2} & 1 & 0 \\ -\frac{1}{2} & \frac{1}{3} & 1 \end{pmatrix}, \qquad R = \begin{pmatrix} 2 & 1 & -1 \\ 0 & 3 & 1 \\ 0 & 0 & 2 \end{pmatrix}, \qquad A = L D L^T = R^T R.$$
+> 3. **与 Sylvester 顺序主子式精确对应**：$\Delta_1 = 4$、$\Delta_2 = 36$、$\Delta_3 = \det(A) = 144 = (\det R)^2$，严格满足主元比值公式 $d_k = \Delta_k / \Delta_{k-1}$（$4=4/1,\; 9=36/4,\; 4=144/36$），且特征值 $\{1.8277,\; 7.1440,\; 11.0283\}$ 全部为正（已由 `verify_manuscript_math.py` 校验）。
 
 ### 8.4.2 二次型的几何直观与 Sylvester 惯性定律
 

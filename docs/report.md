@@ -11,7 +11,7 @@
 
 - **JEVDB 全算子集成与 Prune-First 消融**：支持 `jev_holds`、`jev_probability`（阈值 $\tau$ 排序）、`jev_choose`（行业分类）、`jev_score` 与 `prune_then_decide` 两阶段级联。在 40 条人工标注评估集上，修复全语料库 IDF 后的关键词 AND+BM25 宏 F1 为 `0.792`，全量 JEVDB（DeepSeek 兼容端点 + 协议适配层）宏 F1 为 `0.865`；加入 **Prune-First (`prune_k=3`)** 粗排剪枝后，**剪枝掉 31.7% 候选文档（`328/480`）**，宏精确率反由 `0.826` 提升至 **`0.854`**、精确匹配率由 `0.600` 提升至 **`0.650`**，同时保持宏 F1 **`0.863`**，直观印证了原论文《Prune First, Decide Fast》的核心思想。
 - **矩阵理论与组合优化实证**：在 12 只美股真实日线（`2021-01-04` 至 `2026-10-22`，共 `17,496` 条）上，结合题目一精修的第八章谱理论与正定二次型，实现了样本协方差 Gram 矩阵、**Ledoit-Wolf (2004) 解析最优收缩 $\alpha^*$**、只做多 QP + 闭式解对照 + **KKT 互补松弛残差校验**（`3.96e-9`）、**Spinu (2013) 凸风险平价（ERC）**、相关系数矩阵 PCA 谱分解及**月度滚动样本外回测**。2025-01-27 至 2026-10-22 共 21 次月度调仓（次日开盘撮合、单边 15bp）实测中，Ledoit-Wolf 最小方差实现累计收益 **`48.18%`**、年化波动 **`11.25%`**、夏普比率 **`2.26`**（优于固定 $\alpha=0.05$ 的 `2.23` 与等权滚动的 `1.64`），ERC 将年化换手率由 `73.6%` 压缩至 **`35.5%`**。
-- **四层 Agentic 架构与全量验证**：参照课程 `Lec0` 讲授的四层 Agent 架构封装了三个标准化 Skills（[skills/](../skills/)）与带分级审批门控的编排器（[matrixlab/agent.py](../matrixlab/agent.py)）。Linux 环境（含真实 `jevdb==0.1.0` 与 PySide6 无头界面）**全量 44 条自动化测试全部通过**；并完成多视角独立 Agent 交叉审计与缺陷闭环修复，记录于 [docs/verification/multi-agent-audit-2026-11-27.md](verification/multi-agent-audit-2026-11-27.md)。
+- **四层 Agentic 架构与全量验证**：参照课程 `Lec0` 讲授的四层 Agent 架构封装了三个标准化 Skills（[skills/](../skills/)）与带分级审批门控的编排器（[matrixlab/agent.py](../matrixlab/agent.py)），并在原生桌面端新增第 4 页签 **“Agent 工作流”** 可视化呈现 5 步轨迹、风险分级与人工审批撮合。Linux 环境（含真实 `jevdb==0.1.0` 与 PySide6 无头界面）**全量 47 条自动化测试全部通过**；并完成多视角独立 Agent 交叉审计与缺陷闭环修复，记录于 [docs/verification/multi-agent-audit-2026-11-27.md](verification/multi-agent-audit-2026-11-27.md)。
 
 > 边界声明：评估集为 12 家公司、40 条人工标注与单次兼容端点运行，股票池为 12 只美国大盘股，所有结论仅用于课程方法诊断与教学验证，不构成统计显著性推断或投资建议。
 
@@ -76,6 +76,8 @@
 ![PCA 谱分析与收缩路径页](images/desktop-pca-shrinkage.png)
 
 ![样本外月度滚动回测与绩效页](images/desktop-rolling.png)
+
+![Agent 四层工作流与分级人工审批页](images/desktop-agent.png)
 
 ---
 
@@ -201,18 +203,19 @@ $$d^2 = \frac{1}{N}\|S - mI\|_F^2, \qquad \bar{b}^2 = \frac{1}{T^2 N}\sum_{t=1}^
 2026-11-27 在 Linux（Python 3.13 + `jevdb==0.1.0` + `duckdb==1.4.3` + PySide6 无头环境）运行全量测试：
 
 ```text
-44 passed in 6.95s
+47 passed in 9.26s
 ```
 
-新增覆盖：收缩路径正则化特征值单调性、Ledoit-Wolf 解析公式双循环精确核对、KKT 残差校验、Spinu 凸 ERC 风险占比等权验证、月度滚动回测防未来函数、全语料库 BM25 IDF 区分度、真实 `jevdb 0.1.0` 的 `jev_probability`/`jev_choose`/`prune_then_decide` 端到端链路，以及四层 Agent 分级审批门控。
+新增覆盖：收缩路径正则化特征值单调性、Ledoit-Wolf 解析公式双循环精确核对、KKT 残差校验、Spinu 凸 ERC 风险占比等权验证与策略切换下单、月度滚动回测防未来函数、全语料库 BM25 IDF 区分度、真实 `jevdb 0.1.0` 的 `jev_probability`/`jev_choose`/`jev_score`/`prune_then_decide` 端到端链路，以及四层 Agent 桌面端可视化预览与显式人工审批原子成交。
 
 | 关键结论 | 对应证据文件 |
 |---|---|
 | 全量 BM25 与 Prune-First 消融 | [evaluation/results/keyword-all.json](../evaluation/results/keyword-all.json)、[keyword-any.json](../evaluation/results/keyword-any.json)、[prune-ablation.json](../evaluation/results/prune-ablation.json) |
 | DeepSeek 40 条真实 JEVDB 评估 | [evaluation/results/both-deepseek.json](../evaluation/results/both-deepseek.json)、[jevdb-smoke-2026-11-25.md](verification/jevdb-smoke-2026-11-25.md) |
 | Multi-Agent 交叉核验与 Bug 修复记录 | [docs/verification/multi-agent-audit-2026-11-27.md](verification/multi-agent-audit-2026-11-27.md) |
-| 题目一书稿修订与自动验算 | [manuscript/chapter8_eigenvalues_and_psd_revised.md](../manuscript/chapter8_eigenvalues_and_psd_revised.md)、[manuscript/revision_notes.md](../manuscript/revision_notes.md)、[manuscript/verify_manuscript_math.py](../manuscript/verify_manuscript_math.py) |
+| 题目一书稿修订、32 页体检表与自动验算 | [manuscript/chapter8_eigenvalues_and_psd_revised.md](../manuscript/chapter8_eigenvalues_and_psd_revised.md)、[chapter5_6_norms_svd_supplement.md](../manuscript/chapter5_6_norms_svd_supplement.md)、[revision_notes.md](../manuscript/revision_notes.md)、[verify_manuscript_math.py](../manuscript/verify_manuscript_math.py) |
 | Skills 审计、依赖与许可 | [docs/tools.md](tools.md)、[skills/](../skills/)、[THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) |
+| 5 位成员个人录屏自述提词脚本 | [docs/presentation-scripts.md](presentation-scripts.md) |
 
 ---
 
