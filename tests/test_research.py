@@ -38,6 +38,22 @@ def test_keyword_all_requires_every_term_and_bm25_ranks(tmp_path):
     assert loose.matches[0]["doc_id"] == "both"
 
 
+def test_bm25_uses_full_corpus_idf_under_and_operator(tmp_path):
+    # "common" appears in all 4 docs; "rare" appears in only 2 docs.
+    # Under AND ("common rare"), doc_rare_heavy (2x rare, 1x common) must outrank
+    # doc_common_heavy (1x rare, 2x common) because corpus IDF(rare) > IDF(common).
+    documents = _documents([
+        {"doc_id": "d1", "symbol": "AAA", "title": "common", "text": "common text one"},
+        {"doc_id": "d2", "symbol": "BBB", "title": "common", "text": "common text two"},
+        {"doc_id": "rare_heavy", "symbol": "CCC", "title": "rare", "text": "rare common item"},
+        {"doc_id": "common_heavy", "symbol": "DDD", "title": "common", "text": "common rare item"},
+    ])
+    settings = Settings(tmp_path, "jev", "", "")
+    result = screen(documents, "common rare", "2024-06-01", settings, "keyword", 100, "all")
+    assert [row["doc_id"] for row in result.matches] == ["rare_heavy", "common_heavy"]
+    assert result.matches[0]["match_score"] > result.matches[1]["match_score"]
+
+
 def test_keyword_phrase_and_chinese_bigrams(tmp_path):
     documents = _documents([
         {"doc_id": "phrase", "symbol": "AAA", "title": "Cloud software", "text": "cloud software platform"},
@@ -57,6 +73,13 @@ def test_keyword_rejects_empty_and_invalid_operator(documents, tmp_path):
         screen(documents, "the and of", "2024-06-01", settings)
     with pytest.raises(DataError, match="匹配方式"):
         screen(documents, "cloud", "2024-06-01", settings, operator="xor")
+    with pytest.raises(DataError, match="prune_k"):
+        screen(documents, "cloud", "2024-06-01", settings, prune_k="6")
+    with pytest.raises(DataError, match="choices"):
+        screen(documents, "cloud", "2024-06-01", settings, choices="abc")
+    with pytest.raises(DataError, match="空字节"):
+        from matrixlab.research import _literal
+        _literal("abc\x00def")
 
 
 def test_no_key_never_returns_fabricated_semantics(documents, tmp_path, monkeypatch):
@@ -125,6 +148,67 @@ def test_real_jevdb_sql_and_transport_with_local_test_service(documents, tmp_pat
         assert [r["doc_id"] for r in result.matches] == ["old"]
         assert requests and "future" not in json.dumps(requests)
         assert result.stats
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=2)
+
+
+def test_real_jevdb_probability_choose_and_prune_first(tmp_path, monkeypatch):
+    """Exercise jev_probability, jev_choose, and Prune-First cascade on real jevdb 0.1.0."""
+    import json
+    pytest.importorskip("jevdb")
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+    from threading import Thread
+
+    docs = _documents([
+        {"doc_id": "c1", "symbol": "AAA", "title": "Cloud leader", "text": "enterprise cloud platform infrastructure"},
+        {"doc_id": "c2", "symbol": "BBB", "title": "Cloud tools", "text": "cloud developer tools"},
+        {"doc_id": "c3", "symbol": "CCC", "title": "Beverage maker", "text": "carbonated soft drinks"},
+        {"doc_id": "c4", "symbol": "DDD", "title": "Oil refiner", "text": "crude oil refining energy"},
+    ])
+    seen_counts = []
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_POST(self):
+            body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+            seen_counts.append(len(body["questions"]))
+            answers = {}
+            for key, q in body["questions"].items():
+                text = str(q.get("instructions", {}).get("text", ""))
+                if q.get("type") == "choice":
+                    answers[key] = {"choice": "Technology & Cloud" if "cloud" in text else "Energy"}
+                else:
+                    answers[key] = {"noul": 0.92 if "platform" in text else (0.65 if "cloud" in text else 0.10)}
+            payload = json.dumps({"answers": answers, "model": "localhost-test-fixture", "usage": {"input_tokens": 1}}).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
+
+        def log_message(self, *args):
+            pass
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    monkeypatch.setenv("JEV_API_KEY", "localhost-test-placeholder")
+    settings = Settings(tmp_path, "jev", f"http://127.0.0.1:{server.server_port}/v1/", "")
+    try:
+        prob = screen(docs, "cloud", "2024-06-01", settings, "jevdb", jev_op="probability", threshold=0.8)
+        assert [r["doc_id"] for r in prob.matches] == ["c1"]
+        assert prob.matches[0]["match_score"] == pytest.approx(0.92)
+
+        chosen = screen(docs, "sector", "2024-06-01", settings, "jevdb", jev_op="choose")
+        assert len(chosen.matches) == 4
+        assert all("semantic_label" in r for r in chosen.matches)
+
+        pruned = screen(docs, "cloud", "2024-06-01", settings, "jevdb", jev_op="prune_then_decide", prune_k=2)
+        assert pruned.pruned_from == 4
+        assert pruned.inputs == 2
+        assert seen_counts[-1] == 2
+        assert {r["doc_id"] for r in pruned.matches} == {"c1", "c2"}
     finally:
         server.shutdown()
         server.server_close()

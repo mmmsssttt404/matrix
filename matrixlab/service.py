@@ -35,8 +35,9 @@ def make_server(host, port, settings=None, token=None):
         def do_GET(self):
             if not self.authorized():
                 return self.reply(401, {"error": "unauthorized"})
-            self.reply(200 if self.path == "/health" else 404,
-                       {"service": "matrix-jevdb", "credential_available": settings.credential_available})
+            if self.path != "/health":
+                return self.reply(404, {"error": "not found"})
+            self.reply(200, {"service": "matrix-jevdb", "credential_available": settings.credential_available})
 
         def do_POST(self):
             if not self.authorized():
@@ -51,8 +52,19 @@ def make_server(host, port, settings=None, token=None):
                 if not isinstance(body["documents"], list) or len(body["documents"]) > 200:
                     raise DataError("最多200条资料。")
                 docs = validate_documents(pd.DataFrame(body["documents"]))
-                run = screen(docs, str(body["query"]), body["asof"], settings, "jevdb",
-                             int(body.get("max_documents", 100)), str(body.get("operator", "all")))
+                run = screen(
+                    docs,
+                    str(body["query"]),
+                    body["asof"],
+                    settings,
+                    "jevdb",
+                    int(body.get("max_documents", 100)),
+                    str(body.get("operator", "all")),
+                    jev_op=str(body.get("jev_op", "holds")),
+                    threshold=float(body.get("threshold", 0.5)),
+                    choices=body.get("choices"),
+                    prune_k=body.get("prune_k"),
+                )
                 self.reply(200, asdict(run))
             except ResearchUnavailable:
                 self.reply(503, {"error": "model service unavailable"})

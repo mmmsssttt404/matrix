@@ -1,12 +1,13 @@
 {
-  "generated_at": "2026-11-25T01:30:08.024477+00:00",
+  "generated_at": "2026-11-27T06:15:44.211908+00:00",
   "asof": "2026-11-25",
-  "documents": "evaluation\\documents.csv",
-  "labels": "evaluation\\labels.csv",
+  "documents": "evaluation/documents.csv",
+  "labels": "evaluation/labels.csv",
   "results": {
     "keyword": {
       "mode": "keyword",
       "operator": "any",
+      "jev_op": "holds",
       "summary": {
         "queries": 40,
         "scored": 40,
@@ -29,6 +30,8 @@
           ],
           "notes": "Azure, AWS and Google Cloud are direct competitors",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [
             "MSFT",
             "GOOGL",
@@ -49,6 +52,8 @@
           ],
           "notes": "Office and enterprise productivity suite",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [
             "MSFT"
           ],
@@ -65,6 +70,8 @@
           ],
           "notes": "GPU and accelerated computing for AI",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [
             "NVDA"
           ],
@@ -81,6 +88,8 @@
           ],
           "notes": "Core GPU product line",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [
             "NVDA"
           ],
@@ -98,6 +107,8 @@
           ],
           "notes": "E-commerce and retail operations",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [
             "AMZN",
             "WMT"
@@ -116,6 +127,8 @@
           ],
           "notes": "Online marketplace and e-commerce retail",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [
             "WMT"
           ],
@@ -132,6 +145,8 @@
           ],
           "notes": "Revenue is mainly social media advertising",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [
             "META",
             "GOOGL"
@@ -151,6 +166,8 @@
           ],
           "notes": "Search, social and retail media advertising",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [
             "META",
             "GOOGL"
@@ -168,6 +185,8 @@
           ],
           "notes": "Google Search is the core product",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [
             "GOOGL"
           ],
@@ -184,6 +203,8 @@
           ],
           "notes": "Investment banking division",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [
             "JPM"
           ],
@@ -200,6 +221,8 @@
           ],
           "notes": "Consumer and community banking",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [
             "JPM",
             "JNJ",
@@ -219,6 +242,8 @@
           ],
           "notes": "Card issuing and payments",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [
             "JPM"
           ],
@@ -235,6 +260,8 @@
           ],
           "notes": "Mortgage products",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [
             "JPM"
           ],
@@ -251,6 +278,8 @@
           ],
           "notes": "Prescription medicines",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [
             "JNJ"
           ],
@@ -267,6 +296,8 @@
           ],
           "notes": "Surgical and medical technology",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [
             "JNJ",
             "MSFT"
@@ -284,12 +315,14 @@
           ],
           "notes": "Over-the-counter consumer health",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [
             "JNJ",
             "WMT",
+            "PG",
             "JPM",
             "AMZN",
-            "PG",
             "MSFT",
             "META",
             "AAPL"
@@ -307,6 +340,8 @@
           ],
           "notes": "Upstream exploration and production",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [
             "XOM"
           ],
@@ -323,6 +358,8 @@
           ],
           "notes": "Downstream refining operations",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [
             "XOM"
           ],
@@ -340,6 +377,8 @@
           ],
           "notes": "Manufacturers and retailers of household products",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [
             "PG",
             "WMT",
@@ -361,6 +400,8 @@
           ],
           "notes": "Shampoo and personal care brands",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [
             "PG",
             "MSFT",
@@ -379,6 +420,8 @@
           ],
           "notes": "Carbonated beverage portfolio",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [
             "KO"
           ],
@@ -395,6 +438,8 @@
           ],
           "notes": "Dasani and bottled water",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [
             "KO"
           ],
@@ -411,6 +456,8 @@
           ],
           "notes": "Grocery and supercenter retail",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [
             "WMT",
             "AMZN"
@@ -428,6 +475,8 @@
           ],
           "notes": "Discount retail format",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [
             "WMT",
             "AAPL"
@@ -445,6 +494,8 @@
           ],
           "notes": "iPhone product line",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [
             "AAPL"
           ],
@@ -461,6 +512,8 @@
           ],
           "notes": "Apple Watch and wearable devices",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [
             "AAPL"
           ],
@@ -477,6 +530,8 @@
           ],
           "notes": "Mac personal computers",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [
             "AAPL",
             "PG",
@@ -496,6 +551,8 @@
           ],
           "notes": "YouTube and Prime Video",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [
             "GOOGL",
             "AAPL"
@@ -516,6 +573,8 @@
           ],
           "notes": "AI accelerators and cloud data center infrastructure",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [
             "NVDA"
           ],
@@ -532,6 +591,8 @@
           ],
           "notes": "VR hardware and platforms",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [
             "META"
           ],
@@ -548,6 +609,8 @@
           ],
           "notes": "Card and payment services",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [
             "GOOGL",
             "META"
@@ -565,6 +628,8 @@
           ],
           "notes": "Asset and wealth management",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [
             "JPM"
           ],
@@ -581,6 +646,8 @@
           ],
           "notes": "Low-carbon energy investments",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [
             "XOM"
           ],
@@ -597,6 +664,8 @@
           ],
           "notes": "Paper and household products",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [
             "PG",
             "JNJ",
@@ -618,6 +687,8 @@
           ],
           "notes": "Juice and beverage portfolio",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [
             "KO"
           ],
@@ -634,6 +705,8 @@
           ],
           "notes": "Sam's Club warehouse format",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [
             "WMT"
           ],
@@ -655,6 +728,8 @@
           ],
           "notes": "Large-cap technology platforms",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [],
           "precision": 0.0,
           "recall": 0.0,
@@ -672,6 +747,8 @@
           ],
           "notes": "Everyday consumer and health products",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [
             "JNJ",
             "WMT",
@@ -691,6 +768,8 @@
           ],
           "notes": "Data center and AI accelerators",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [],
           "precision": 0.0,
           "recall": 0.0,
@@ -707,6 +786,8 @@
           ],
           "notes": "iOS macOS Windows and Android",
           "error": null,
+          "inputs_evaluated": 12,
+          "pruned_from": null,
           "matched": [
             "GOOGL"
           ],

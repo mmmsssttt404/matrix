@@ -9,7 +9,7 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-from matrixlab.analytics import analyze, holdout_curve, performance, shrinkage_path
+from matrixlab.analytics import analyze, holdout_curve, performance, rolling_holdout_curve, shrinkage_path
 from matrixlab.config import Settings
 from matrixlab.data import (DOC_COLUMNS, PRICE_COLUMNS, DataError, data_quality,
                             read_documents, read_prices, validate_documents, validate_prices)
@@ -239,8 +239,11 @@ with matrix:
             fig = px.line(curve, color_discrete_sequence=["#31d4a4", "#8ca3c5"])
             fig.update_layout(height=320, yaxis_title="净值", legend_title_text="", margin=dict(l=0, r=0, t=15, b=0))
             st.plotly_chart(fig, width="stretch")
-            st.dataframe(performance(curve).style.format("{:.2%}"), width="stretch")
-            st.caption("首笔总成本默认15bp；此比较使用可分份额模型。离散份额与逐笔费用以模拟账本为准。")
+            perf_formats = {"累计收益": "{:.2%}", "最大回撤": "{:.2%}", "年化收益": "{:.2%}",
+                            "年化波动率": "{:.2%}", "夏普比率": "{:.2f}"}
+            st.dataframe(performance(curve).style.format(perf_formats), width="stretch")
+            st.caption(f"首笔总成本默认15bp；Ledoit-Wolf最优收缩推荐α*={risk.ledoit_wolf_alpha:.3f}；"
+                       f"KKT互补残差={risk.kkt_complementarity_error:.2e}。")
         except DataError as exc:
             st.info(str(exc))
     else:

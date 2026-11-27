@@ -138,6 +138,8 @@ class EquityChart(pg.PlotWidget):
             return
         self.axis.dates = curve.index.tolist()
         self.addLegend(offset=(12, 10))
+        palette = [BLUE, "#e5b567", UP, "#c084fc", DOWN]
         for i, column in enumerate(curve):
-            self.plot(np.arange(len(curve)), curve[column].to_numpy(), name=str(column), pen=pg.mkPen([BLUE, "#d8b874", UP][i % 3], width=1.7))
+            self.plot(np.arange(len(curve)), curve[column].to_numpy(), name=str(column),
+                      pen=pg.mkPen(palette[i % len(palette)], width=1.8))
         self.enableAutoRange()

@@ -108,9 +108,18 @@ class ConnectionDialog(QtWidgets.QDialog):
         path = self.workspace.settings.data_dir / ".desktop.env"
         for key, value in values.items():
             set_key(path, key, value)
-            os.environ[key] = value
-        loaded = Settings.load()
-        self.workspace.settings = Settings(self.workspace.settings.data_dir, loaded.backend, loaded.endpoint, loaded.model, loaded.service_url, loaded.service_token)
+            if key in {"JEV_API_KEY", "OPENAI_API_KEY"}:
+                os.environ[key] = value
+        if os.name == "posix" and path.exists():
+            os.chmod(path, 0o600)
+        self.workspace.settings = Settings(
+            self.workspace.settings.data_dir,
+            values.get("MATRIX_BACKEND", self.workspace.settings.backend),
+            values.get("MATRIX_API_ENDPOINT", self.workspace.settings.endpoint),
+            values.get("MATRIX_API_MODEL", self.workspace.settings.model),
+            values["MATRIX_JEVDB_SERVICE_URL"],
+            values["MATRIX_JEVDB_SERVICE_TOKEN"],
+        )
         self.accept()
 
 

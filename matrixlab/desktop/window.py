@@ -10,7 +10,7 @@ from uuid import uuid4
 import pandas as pd
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from ..acquire import fetch_dataset
+from ..acquire import archive_documents, fetch_dataset
 from ..data import DataError, data_quality, validate_documents, validate_prices
 from ..trading import Order, TradingError, rebalance_orders
 from .charts import PriceChart
@@ -49,6 +49,7 @@ class MainWindow(QtWidgets.QMainWindow):
                                              ("导入行情CSV…", "", lambda: self.import_csv("prices")),
                                              ("导入公司资料…", "", lambda: self.import_csv("documents")),
                                              ("下载公开历史数据", "", self.download),
+                                             ("获取历史百科存档(2024-12-31)", "", self.archive_history),
                                              ("导出成交记录…", "Ctrl+E", self.export_orders),
                                              ("退出", "Ctrl+Q", self.close)]:
             action = files.addAction(caption)
@@ -519,6 +520,14 @@ class MainWindow(QtWidgets.QMainWindow):
     def downloaded(self, result):
         self.workspace.reload()
         self.message(f"已下载{result['rows']:,}条真实日线，{result['documents_downloaded']}份公司简介。")
+
+    def archive_history(self):
+        self.run_job(lambda: archive_documents(self.workspace.settings.data_dir, asof="2024-12-31"), self.archived)
+
+    def archived(self, result):
+        self.workspace.reload()
+        err_count = len(result.get("errors") or [])
+        self.message(f"已获取{result['archived_documents']}份2024-12-31历史百科存档（失败{err_count}份）。")
 
     def open_workspace(self):
         directory = QtWidgets.QFileDialog.getExistingDirectory(self, "打开工作区（含prices.csv）", str(self.workspace.settings.data_dir))

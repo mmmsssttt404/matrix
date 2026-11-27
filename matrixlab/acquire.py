@@ -3,7 +3,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 import json
 from pathlib import Path
-from urllib.parse import urlencode
+import re
+from urllib.parse import quote, urlencode
 from urllib.request import Request, urlopen
 from zoneinfo import ZoneInfo
 
@@ -15,15 +16,24 @@ DEFAULT_SYMBOLS = ["AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "JPM", "JNJ"
 WIKI_TITLES = dict(zip(DEFAULT_SYMBOLS, ["Apple Inc.", "Microsoft", "Nvidia", "Amazon (company)",
     "Alphabet Inc.", "Meta Platforms", "JPMorgan Chase", "Johnson & Johnson", "ExxonMobil",
     "Procter & Gamble", "The Coca-Cola Company", "Walmart"]))
+_SYMBOL_RE = re.compile(r"^[A-Z0-9.^=-]{1,20}$")
+
+
+def _valid_symbol(symbol):
+    clean = str(symbol).strip().upper()
+    if not _SYMBOL_RE.fullmatch(clean):
+        raise DataError(f"股票代码格式不正确：{symbol}")
+    return clean
 
 
 def download_history(symbol, start="2021-01-01", end=None):
+    symbol = _valid_symbol(symbol)
     start_day = pd.Timestamp(start)
     end_day = pd.Timestamp(end) if end else pd.Timestamp(datetime.now(ZoneInfo("America/New_York")).date())
-    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?" + urlencode({
+    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{quote(symbol, safe='')}?" + urlencode({
         "period1": int(start_day.tz_localize("UTC").timestamp()),
         "period2": int(end_day.tz_localize("UTC").timestamp()), "interval": "1d", "events": "div,splits"})
-    request = Request(url, headers={"User-Agent": "Mozilla/5.0 MatrixResearchLab/0.1"})
+    request = Request(url, headers={"User-Agent": "Mozilla/5.0 MatrixResearchLab/0.2"})
     with urlopen(request, timeout=30) as response:
         payload = json.load(response)
     if payload["chart"].get("error"):
@@ -109,14 +119,37 @@ def fetch_dataset(directory, symbols=None, start="2021-01-01", end=None, profile
     return manifest
 
 
-def download_archived_description(symbol, asof):
+def download_archived_description(symbol, asof, retries=3):
     """Fetch a specific Wikipedia revision, never backdate a current profile."""
+    import time
+    from urllib.error import HTTPError, URLError
     from bs4 import BeautifulSoup
+
+    headers = {
+        "User-Agent": "MatrixResearchLab/0.2 (https://github.com/mmmsssttt404/matrix; UCAS educational coursework)",
+        "Accept": "application/json",
+    }
 
     def request(params):
         url = "https://en.wikipedia.org/w/api.php?" + urlencode({"format": "json", **params})
-        with urlopen(Request(url, headers={"User-Agent": "MatrixResearchLab/0.1 educational research"}), timeout=30) as response:
-            return json.load(response)
+        last_exc = None
+        for attempt in range(retries):
+            try:
+                with urlopen(Request(url, headers=headers), timeout=30) as response:
+                    return json.load(response)
+            except HTTPError as exc:
+                last_exc = exc
+                if exc.code in {429, 500, 502, 503, 504} and attempt + 1 < retries:
+                    time.sleep(1.0 * (2 ** attempt))
+                    continue
+                raise
+            except URLError as exc:
+                last_exc = exc
+                if attempt + 1 < retries:
+                    time.sleep(1.0 * (2 ** attempt))
+                    continue
+                raise
+        raise last_exc
 
     result = request({"action": "query", "prop": "revisions", "titles": WIKI_TITLES[symbol],
                       "rvprop": "ids|timestamp", "rvstart": str(pd.Timestamp(asof).date()) + "T23:59:59Z", "rvlimit": 1})
@@ -136,6 +169,8 @@ def download_archived_description(symbol, asof):
 
 
 def archive_documents(directory, asof="2024-12-31", symbols=None):
+    import time
+
     directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=True)
     symbols = symbols or DEFAULT_SYMBOLS
@@ -143,21 +178,22 @@ def archive_documents(directory, asof="2024-12-31", symbols=None):
     cache = directory / "archive_sources"
     cache.mkdir(exist_ok=True)
 
-    def archived(symbol):
-        path = cache / f"{symbol}-{pd.Timestamp(asof).date()}.json"
-        if path.exists():
-            return json.loads(path.read_text(encoding="utf-8"))
-        record = download_archived_description(symbol, asof)
-        path.write_text(json.dumps(record, ensure_ascii=False), encoding="utf-8")
-        return record
-
-    with ThreadPoolExecutor(max_workers=3) as pool:
-        tasks = {pool.submit(archived, s): s for s in symbols}
-        for task in as_completed(tasks):
-            try:
-                documents.append(task.result())
-            except Exception as exc:
-                errors.append({"symbol": tasks[task], "error": type(exc).__name__})
+    # Sequential polite requests avoid Wikimedia 429/403 burst throttling.
+    for raw_symbol in symbols:
+        try:
+            symbol = _valid_symbol(raw_symbol)
+            if symbol not in WIKI_TITLES:
+                raise DataError(f"未配置 {symbol} 对应的 Wikipedia 条目。")
+            path = cache / f"{symbol}-{pd.Timestamp(asof).date()}.json"
+            if path.exists():
+                record = json.loads(path.read_text(encoding="utf-8"))
+            else:
+                record = download_archived_description(symbol, asof)
+                path.write_text(json.dumps(record, ensure_ascii=False), encoding="utf-8")
+                time.sleep(0.35)
+            documents.append(record)
+        except Exception as exc:
+            errors.append({"symbol": str(raw_symbol), "error": type(exc).__name__})
     if not documents:
         raise DataError("历史资料获取失败，不能用当前简介冒充。")
     path = directory / "documents.csv"

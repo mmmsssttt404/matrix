@@ -1,302 +1,241 @@
-# 项目报告：JEVDB股票研究与矩阵组合模拟
+# 项目总报告：基于 JEVDB 的股票研究与矩阵组合模拟软件（兼述与题目一书稿修订的理论联动）
 
-实施日期：2026-10-23；本轮补充：2026-11-25。定位：课程原型；真实模型调用已通过兼容端点完成 40 条评估，成员贡献仍需按实际执行情况填写。
+> **小组成员**：吕云迪（组长）、徐瑞、闫涛、吴昀泽、李晨  
+> **实施周期**：2026-10-23 初版搭建；2026-11-25 语义评估与矩阵诊断补充；2026-11-27 双题联动升级与多 Agent 交叉核验。定位：中国科学院大学《矩阵分析与应用》课程大作业完整原型与理论实证。
 
 ## 摘要
 
-本项目把“资料筛选 → 矩阵风险分析 → 模拟订单 → 账户结果”连成一条可演示的流程：用 JEVDB 语义筛选或明确标记的关键词基线从公司资料中选股，用协方差、收缩、最小方差二次规划、PCA 与风险贡献分析组合，再在 SQLite 事务账本上做次日开盘撮合的纸面交易。
+本项目同时完成课程大作业的**题目一（《矩阵分析》中文书稿修订）**与**题目二（基于 JEVDB 的股票研究与模拟交易软件）**，构建了“**教材谱理论与正定矩阵推导 → 真实金融数据与语义数据库原型 → 可复现实验与多 Agent 交叉核验**”的完整闭环。
 
-本轮补充的核心结果：
+在题目二中，系统将“自然语言筛选需求 → JEVDB 语义检索 / Prune-First 两阶段剪枝 → 矩阵风控与组合优化 → 分级人工审批与 SQLite 原子模拟交易 → 可追溯持仓与净值展示”串联为端到端工作流，主要实测成果如下：
 
-- 关键词基线改为 AND/OR + BM25，并建立 40 条人工标注评估集；关键词 AND 宏 F1 为 0.793。
-- 矩阵部分补充 PCA、风险贡献、闭式解与 KKT 对照、收缩路径和年化绩效指标。
-- JEVDB 扩展 0.1.0 可加载；默认 Typesafe 后端被地区限制（HTTP 451），改用 DeepSeek 兼容端点并加本地协议适配层后完成 40 条真实查询，0 错误，宏 F1 0.865、MRR 0.906。
-- 全量测试 35 通过、2 跳过（跳过项为 Windows 无法导入 `jevdb`）。
+- **JEVDB 全算子集成与 Prune-First 消融**：支持 `jev_holds`、`jev_probability`（阈值 $\tau$ 排序）、`jev_choose`（行业分类）、`jev_score` 与 `prune_then_decide` 两阶段级联。在 40 条人工标注评估集上，修复全语料库 IDF 后的关键词 AND+BM25 宏 F1 为 `0.792`，全量 JEVDB（DeepSeek 兼容端点 + 协议适配层）宏 F1 为 `0.865`；加入 **Prune-First (`prune_k=3`)** 粗排剪枝后，**剪枝掉 31.7% 候选文档（`328/480`）**，宏精确率反由 `0.826` 提升至 **`0.854`**、精确匹配率由 `0.600` 提升至 **`0.650`**，同时保持宏 F1 **`0.863`**，直观印证了原论文《Prune First, Decide Fast》的核心思想。
+- **矩阵理论与组合优化实证**：在 12 只美股真实日线（`2021-01-04` 至 `2026-10-22`，共 `17,496` 条）上，结合题目一精修的第八章谱理论与正定二次型，实现了样本协方差 Gram 矩阵、**Ledoit-Wolf (2004) 解析最优收缩 $\alpha^*$**、只做多 QP + 闭式解对照 + **KKT 互补松弛残差校验**（`3.96e-9`）、**Spinu (2013) 凸风险平价（ERC）**、相关系数矩阵 PCA 谱分解及**月度滚动样本外回测**。2025-01-27 至 2026-10-22 共 21 次月度调仓（次日开盘撮合、单边 15bp）实测中，Ledoit-Wolf 最小方差实现累计收益 **`48.18%`**、年化波动 **`11.25%`**、夏普比率 **`2.26`**（优于固定 $\alpha=0.05$ 的 `2.23` 与等权滚动的 `1.64`），ERC 将年化换手率由 `73.6%` 压缩至 **`35.5%`**。
+- **四层 Agentic 架构与全量验证**：参照课程 `Lec0` 讲授的四层 Agent 架构封装了三个标准化 Skills（[skills/](../skills/)）与带分级审批门控的编排器（[matrixlab/agent.py](../matrixlab/agent.py)）。Linux 环境（含真实 `jevdb==0.1.0` 与 PySide6 无头界面）**全量 44 条自动化测试全部通过**；并完成多视角独立 Agent 交叉审计与缺陷闭环修复，记录于 [docs/verification/multi-agent-audit-2026-11-27.md](verification/multi-agent-audit-2026-11-27.md)。
 
-这些数字只对应 12 只美股、40 条查询和单次运行，不支持统计显著性结论，也不能外推为 JEVDB 官方后端质量。
+> 边界声明：评估集为 12 家公司、40 条人工标注与单次兼容端点运行，股票池为 12 只美国大盘股，所有结论仅用于课程方法诊断与教学验证，不构成统计显著性推断或投资建议。
 
-## 1. 场景与目标
+---
 
-面向课程小组，把“资料筛选 → 矩阵风险分析 → 模拟订单 → 账户结果”连成可演示流程。用户可以是希望按主题筛选公司、比较组合风险并做纸面交易的学生或研究者。输入是自然语言研究条件、股票池、研究日期、回看长度和收缩系数；输出是带来源与时间戳的筛选依据、协方差与风险诊断、目标权重、订单/成交/持仓/权益记录。
+## 1. 场景定位、双题联动与架构对齐
 
-主界面为 Qt 原生桌面工作台（`matrixlab/desktop/`），Streamlit 界面保留为调试与对照。核心逻辑也可通过 Python 模块和 CLI 调用。
+### 1.1 目标用户、场景与完成边界
 
-| 作业要求 | 当前对应实现 |
+本项目面向希望将**非结构化公司研究资料**与**矩阵风险优化**结合的学生或量化研究初学者。系统明确界定完成边界：
+- **输入**：自然语言研究条件（或关键词/短语）、研究截止日期 `asof`、股票池、回看窗口长度、收缩系数 $\alpha$（或 Ledoit-Wolf 自动估计）与模拟交易费率参数；
+- **输出**：带原始出处与可用时间 `available_at` 的筛选依据 JSON、协方差/PCA/收缩路径/KKT 残差诊断、目标权重 CSV、以及 SQLite 原子账本中的成交/持仓/权益记录；
+- **非目标范围**：不接入真实券商交易接口、不宣称提供实时盘口推送、不构建高频撮合引擎。
+
+### 1.2 独立文献核验发现：JEVDB 与 Palimpzest 的架构差异
+
+作业题面中提到“语义数据库系统 JEVDB（基于 Palimpzest 开源平台）”。我们在前期独立核查题目论文《*Prune First, Decide Fast: Scalable Semantic Query Processing with JEVDB*》（`arXiv:2610.02046v1`）及普渡大学 PDAIS 作者仓库（[github.com/PDAIS/JEVDB](https://github.com/PDAIS/JEVDB)）后确认：
+- **作者当前开源发布的 `jevdb==0.1.0` 实际上是构建在 DuckDB（`1.4.3`）之上的语义 SQL 扩展**，提供 `jev_holds`、`jev_probability`、`jev_choose`、`jev_score`、`jev_keys_overlap` 等原生 SQL 函数；
+- **Palimpzest 在原论文中是与 JEVDB 进行延迟/成本对比的基线系统之一**，而非 `jevdb 0.1.0` 的运行时底座。
+因此本项目遵循作者官方发布包集成真实 DuckDB+JEVDB 扩展，未强行引入冗余的 Palimpzest 运行时，并在报告与 [tools.md](tools.md) 中透明交代该核验结论。
+
+### 1.3 作业要求逐项映射
+
+| 作业要求 | 本项目交付与实现 |
 |---|---|
-| 目标用户、输入输出与核心流程 | 第 1—2 节；Qt 四页签与完整演示步骤 |
-| JEVDB 集成 | 扩展 0.1.0 可加载；Typesafe 因地区限制返回 451，llm 后端经本地协议适配层用 DeepSeek 完成 40 条评估，见 5.4 |
-| 工具职责、依赖、权限、来源与许可 | `docs/tools.md` 与锁定依赖 |
-| 现金、持仓、订单、价格、费用 | SQLite 事务账本，次日开盘、滑点、手续费、幂等与回滚 |
-| 矩阵理论联系 | 协方差 Gram 矩阵、半正定、条件数、收缩、QP、PCA、风险贡献、闭式解与 KKT |
-| 原型、源码、运行和演示资料 | `matrixlab/`、`app.py`、`docs/runbook.md`、截图与 CLI |
-| 成员贡献与 multi-agent 核验 | 结构已准备，真实成员填写与核验记录仍待补，见第 9 节 |
+| 题目一：《矩阵分析》中文书稿修订 + 修改说明 | [manuscript/chapter8_eigenvalues_and_psd_revised.md](../manuscript/chapter8_eigenvalues_and_psd_revised.md)（第八章/Lec9）、[chapter5_6_norms_svd_supplement.md](../manuscript/chapter5_6_norms_svd_supplement.md)（第五/六章联动）、[revision_notes.md](../manuscript/revision_notes.md) 与 [verify_manuscript_math.py](../manuscript/verify_manuscript_math.py) |
+| 题目二：完整“用户需求→工具调用→结果展示”流程 | Qt 原生桌面工作台（[matrixlab/desktop/](../matrixlab/desktop/)）、四层 Agentic 编排器（[matrixlab/agent.py](../matrixlab/agent.py)）、Streamlit 对照界面（[app.py](../app.py)）与 CLI（[matrixlab/cli.py](../matrixlab/cli.py)） |
+| 题目二 3(b)：开源 Skills 调研、职责、权限与许可审计 | [docs/tools.md](tools.md) + 三个标准化 Skill 定义（[skills/](../skills/)） + [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) |
+| 题目二 3(c)：交易机制建模（现金/持仓/校验/价格/费用） | [matrixlab/trading.py](../matrixlab/trading.py)：整数微美元现金、次日开盘撮合、方向滑点、单列手续费、先卖后买、事务回滚与幂等防重 |
+| 共同要求 4—5：multi-agent 核验与成员贡献 | [docs/verification/multi-agent-audit-2026-11-27.md](verification/multi-agent-audit-2026-11-27.md)、[jevdb-smoke-2026-11-25.md](verification/jevdb-smoke-2026-11-25.md) 与 [docs/contributions.md](contributions.md) |
 
-主要交付物：
+---
 
-- 源码：`matrixlab/`、`app.py`、`scripts/`、`tests/`；
-- 评估：`evaluation/`（12 份文档、40 条标注、评估脚本与结果）；
-- 文档：`docs/report.md`、`docs/runbook.md`、`docs/tools.md`、`docs/verification/`；
-- 界面截图：`docs/images/`。
+## 2. 系统架构与四层 Agentic 编排
 
-## 2. 系统架构与数据流
+对照课程 `Lec0` 提出的 **AI Agent 四层概念架构** 与 **Human Control 风险分级模型**，系统将确定性数值引擎与语义数据库解耦：
 
 ```text
-Yahoo chart API ──► prices.csv ──┐
-Wikipedia 历史版本 ──► documents.csv ──┤
-                                      ├─► research.screen ──► ResearchRun(JSON)
-JEVDB / 远程语义服务 ─────────────────┘          │
-                                                ▼
-                              analytics.analyze / holdout_curve
-                                                │
-                                                ▼
-                              trading.Broker ──► paper.sqlite3
-                                                │
-                                                ▼
-                                   Qt / Streamlit 展示 + CSV/JSON 导出
+用户研究需求 + 截止日期 asof
+        │
+        ▼  [Layer 1: Preamble / Rules]  skills/*/SKILL.md（防未来函数 / 禁任意SQL / 禁伪造语义）
+        ▼  [Layer 2: Reasoning / Plan]  matrixlab/agent.py 任务拆解与参数校验
+        ▼  [Layer 3: Retrieval/Context] matrix-stock-research Skill (LOW_AUTO)
+           ├── Yahoo Chart API -> prices.csv / Wikipedia Revision API -> documents.csv
+           └── JEVDB (jev_holds / jev_probability / jev_choose / Prune-First) 或 离线BM25
+        ▼  [Layer 4a: Analytics Action] matrix-portfolio-risk Skill (LOW_AUTO)
+           └── 协方差Gram矩阵 -> Ledoit-Wolf最优收缩 -> QP/KKT/ERC -> PCA与滚动回测
+        ▼  [Layer 4b: Proposal Gate]    matrix-paper-broker Skill (MEDIUM_CONFIRM)
+           └── 按信号日收盘价估算调仓清单（预留5%现金），向用户展示预览
+        ▼  [Layer 4c: Ledger Mutation]  matrix-paper-broker Skill (HIGH_EXPLICIT_APPROVAL)
+           └── 显式确认后写入 paper.sqlite3（BEGIN IMMEDIATE 原子事务 + 次日开盘撮合）
 ```
 
-| 模块 | 文件 | 职责 |
-|---|---|---|
-| 采集 | `matrixlab/acquire.py` | 行情与百科资料采集，保留来源、版本和获取时间 |
-| 数据校验 | `matrixlab/data.py` | CSV 校验、时间边界、数据质量检查 |
-| 研究筛选 | `matrixlab/research.py` | JEVDB 语义筛选与明确分离的关键词基线，保存研究记录 |
-| 矩阵分析 | `matrixlab/analytics.py` | 协方差、收缩、QP、PCA、风险贡献、样本外曲线与绩效 |
-| 模拟交易 | `matrixlab/trading.py` | SQLite 事务账本、次日开盘撮合、费用与幂等 |
-| 远程语义服务 | `matrixlab/service.py` | 可选的 JEVDB 语义服务，带 HMAC 请求签名 |
-| 协议适配 | `scripts/jev_llm_proxy.py` | 把 JEVDB 的 `json_schema` 请求转换为兼容端点的 `json_object` 调用 |
-| 评估 | `evaluation/evaluate.py` | 40 条人工标注的诊断评估 |
-
-### 2.1 界面
+### 2.1 原生桌面工作台界面（2026-11-27 实测截屏）
 
 ![原生工作台总览](images/desktop-workbench.png)
 
-![公司研究页](images/desktop-research.png)
+![公司研究页（含 JEVDB 算子与阈值控件）](images/desktop-research.png)
 
-![矩阵与组合页](images/desktop-portfolio.png)
+![矩阵与组合页（QP/闭式解/ERC 对照与协方差热力图）](images/desktop-portfolio.png)
 
-![模拟交易页](images/paper-trading.png)
+![PCA 谱分析与收缩路径页](images/desktop-pca-shrinkage.png)
 
-## 3. 数据与时间边界
+![样本外月度滚动回测与绩效页](images/desktop-rolling.png)
 
-原运行成功获取 12 只美股、17,496 条日线，覆盖 2021-01-04 至 2026-10-22；每行保留 Yahoo 来源端点和获取时间。下载的 12 份当前公司简介只在获取之后可用，不能用于过去的历史选股。
+---
 
-另成功获取 5 份截至 2024-12-31 的 Wikipedia 公司介绍版本，保存确切版本 ID 和时间；其余 7 份发生 HTTP 访问失败，详情保存在本地 `data/archive-manifest.json`，未生成替代资料。历史关键词演示在 2025-01-27 可用的 5 份资料中命中 4 份；这是关键词演示，不是语义准确率。
+## 3. 数据契约与防未来函数时间边界
 
-训练使用研究日期及之前的行情，收益率不向前填充；共同有效观测不足 60 行时停止。样本外曲线从下一交易日复权开盘开始，避免用当天收盘价产生当天成交。股票池由当前选择形成，仍有幸存者偏差；下载的是供应商当前修订后的历史快照，不能声称重现当时全部可见信息。
+- **行情数据**：Yahoo Chart API 下载 12 只美股（`AAPL, AMZN, GOOGL, JNJ, JPM, KO, META, MSFT, NVDA, PG, WMT, XOM`）自 `2021-01-04` 至 `2026-10-22` 的总回报复权日线，共 `17,496` 行；排除纽约当日尚未收盘的日线，且通过 `validate_prices` 强制校验无重复、无负值/无穷大、OHLC 合法与统一 `total_return_adjusted` 口径。
+- **文本资料与历史存档**：下载的当前公司简介严格以拉取时刻作为 `available_at`，不得用于更早的历史选股；历史演示通过 Wikipedia MediaWiki API 按 `rvstart=2024-12-31T23:59:59Z` 抓取指定历史版本 `oldid` 并保留署名链接。针对早期并发抓取触发 Wikimedia HTTP 429/403 限流导致 7/12 失败的问题，本轮已在 [matrixlab/acquire.py](../matrixlab/acquire.py) 中改为带规范 User-Agent 的串行礼貌限速与指数退避重试，并在桌面端菜单补充“获取历史百科存档”入口。
+- **训练与回测隔离**：矩阵拟合严格截断 `date <= asof`，收益率缺失不向前填充；样本外曲线与纸面交易均从信号日**下一交易日复权开盘价**入场，杜绝“用当日收盘价产生当日成交”的前视偏差。
 
-本工作副本不附带 `data/`、`.env` 或任何密钥；报告中的原始数据指标来自 2026-10 的本机运行，重新复现需要按 `docs/runbook.md` 重新下载数据并配置端点。
+---
 
-## 4. 矩阵方法
+## 4. 矩阵分析方法与实证诊断（与题目一第八章直接对应）
 
-令 `R` 为 `T×N` 的日收益率矩阵，`X` 为逐列去均值后的矩阵。
+令 $R \in \mathbb{R}^{T \times N}$ 为回看窗口内共同有效日收益率矩阵，$X = R - \mathbf{1}\bar{r}^T$ 为去均值矩阵。本节的每一步推导均可在题目一修订稿 [chapter8_eigenvalues_and_psd_revised.md](../manuscript/chapter8_eigenvalues_and_psd_revised.md) 第 8.3–8.4 节中找到完整定理证明与几何阐释。
 
-### 4.1 协方差 Gram 矩阵
+### 4.1 样本协方差 Gram 矩阵与正定性
 
-```text
-Σ = 252 · XᵀX / (T−1)
-```
+$$\Sigma = \frac{252}{T-1} X^T X$$
 
-对任意向量 `v`，`vᵀXᵀXv = ||Xv||² ≥ 0`，因此样本协方差半正定；当 `T > N` 且 `X` 列满秩时正定。程序检查最小特征值是否为正，并用 `κ(Σ)=λmax/λmin` 度量病态程度。
+对任意非零向量 $v \in \mathbb{R}^N$，均有 $v^T \Sigma v = \frac{252}{T-1}\|Xv\|_2^2 \ge 0$，故 $\Sigma$ 必对称半正定；当 $T > N$ 且 $X$ 列满秩时严格正定。系统通过对称特征分解检查最小特征值 $\lambda_{\min}(\Sigma)$ 与谱条件数 $\kappa_2(\Sigma) = \lambda_{\max}/\lambda_{\min}$。
 
-### 4.2 收缩与条件数
+### 4.2 线性谱收缩与 Ledoit-Wolf (2004) 解析最优系数
 
-```text
-Σ_α = (1−α)Σ + α · tr(Σ)/N · I,   0 ≤ α ≤ 1
-```
+$$\Sigma_\alpha = (1-\alpha)\Sigma + \alpha \mu I, \qquad \mu = \frac{\mathrm{tr}(\Sigma)}{N}, \quad \alpha \in [0, 1]$$
 
-向等方差对角目标收缩可降低条件数、稳定权重；`α=1` 时目标矩阵为数量矩阵，只做多最小方差解退化为等权。界面给出 `κ(Σ)`、`κ(Σ_α)` 与收缩路径。
+由第八章谱平移性质可知，$\Sigma_\alpha$ 与 $\Sigma$ 共享同一组正交特征向量，且第 $i$ 个特征值满足：
 
-### 4.3 最小方差二次规划
+$$\lambda_i(\Sigma_\alpha) = (1-\alpha)\lambda_i(\Sigma) + \alpha \mu$$
 
-```text
-min_w  wᵀΣ_αw
-s.t.   1ᵀw = 1,  w ≥ 0
-```
+因此当 $\alpha$ 从 $0$ 增至 $1$ 时，小特征值被线性抬升、大特征值被压低，条件数 $\kappa_2(\Sigma_\alpha)$ 严格单调下降至 $1$。为避免手工盲选 $\alpha$，系统实现 **Ledoit-Wolf (2004)** 解析最优收缩强度（对 252 年化因子尺度不变）：令 $S = \frac{1}{T}X^TX$，目标 $m = \frac{\mathrm{tr}(S)}{N}$，
 
-程序用 SLSQP 求解，目标按 `tr(Σ)/N` 归一化以避免量级过小导致提前停止，并检查收敛、非负性和权重和。
+$$d^2 = \frac{1}{N}\|S - mI\|_F^2, \qquad \bar{b}^2 = \frac{1}{T^2 N}\sum_{t=1}^T \|x_t x_t^T - S\|_F^2 = \frac{\sum_{t=1}^T \|x_t\|_2^4 - T\|S\|_F^2}{T^2 N}, \qquad \alpha^* = \frac{\min(\bar{b}^2, d^2)}{d^2}$$
 
-### 4.4 无约束闭式解与 KKT
+### 4.3 最小方差 QP、无约束闭式解与 KKT 数值校验
 
-对等式约束拉格朗日函数：
+求解只做多最小方差二次规划 $\min_w w^T \Sigma_\alpha w \;\text{s.t.}\; \mathbf{1}^T w = 1,\; w \ge 0$。与无约束闭式解 $w^*_{\text{unc}} = \frac{\Sigma_\alpha^{-1}\mathbf{1}}{\mathbf{1}^T \Sigma_\alpha^{-1}\mathbf{1}}$ 对照，并对数值解直接检验一阶 KKT 条件（$\lambda = -2 w^T \Sigma_\alpha w,\; \mu = 2\Sigma_\alpha w + \lambda \mathbf{1}$）：
+- 原始可行性误差 $\max(|\mathbf{1}^T w - 1|, \max(0, -w_i))$；
+- 对偶可行性违背 $\max(0, -\min_i \mu_i)$；
+- 互补松弛残差 $\max_i |\mu_i w_i|$。
 
-```text
-L = wᵀΣ_αw + λ(1ᵀw − 1)
-∂L/∂w = 2Σ_αw + λ1 = 0
-⇒ w* = Σ_α⁻¹1 / (1ᵀΣ_α⁻¹1)
-```
+### 4.4 相关系数矩阵 PCA、欧拉风险分解与 Spinu 凸风险平价（ERC）
 
-若 `w* ≥ 0`，则它就是只做多 QP 的解；若出现负权重，非负约束起作用，QP 目标值高于无约束最优值。程序同时计算闭式解、最小权重与目标差，作为数值校验和教学对照。加入 `w ≥ 0` 后 KKT 条件为：
+- **PCA**：对相关系数矩阵 $C = D^{-1/2}\Sigma D^{-1/2} = V\Lambda V^T$ 做正交特征分解，识别市场公共因子（PC1）与行业轮动因子（PC2/PC3）。
+- **风险贡献分解**：组合波动率 $\sigma_p = \sqrt{w^T \Sigma w}$ 是权重 $w$ 的一次正齐次函数，由欧拉定理得 $\mathrm{MCTR}_i = \frac{(\Sigma w)_i}{\sigma_p}$、$\mathrm{CTR}_i = w_i \mathrm{MCTR}_i$，严格满足 $\sum_i \mathrm{CTR}_i = \sigma_p$。
+- **Spinu (2013) 凸风险平价（ERC）**：最小方差常把权重过度集中在少数低波防御股上。我们引入严格凸对数障碍规划：
+  $$\min_{y > 0}\; \frac{1}{2} y^T \Sigma_\alpha y - \frac{1}{N}\sum_{i=1}^N \ln y_i, \qquad w_{\text{ERC}} = \frac{y^*}{\mathbf{1}^T y^*}$$
+  其一阶最优性条件 $\Sigma_\alpha y^* = \frac{1}{N}(y^*)^{-1}$ 精确保证所有资产的风险贡献占比相等（$\mathrm{CTR}_i / \sigma_p = 1/N$）。
 
-```text
-2Σ_αw + λ1 − μ = 0,   μ ≥ 0,   μᵢwᵢ = 0
-```
+### 4.5 真实 12 只美股实测结果（研究日 `2025-01-27`，252 交易日窗口）
 
-### 4.5 PCA 与风险贡献
+1. **矩阵谱诊断与 KKT 校验**：
+   - 样本协方差正定，条件数 $\kappa(\Sigma) = 48.30$；固定 $\alpha=0.05$ 收缩后降至 `33.47`；**Ledoit-Wolf 自动估计 $\alpha^* = 0.0635$**，条件数降至 **`30.78`**，有效资产数 $N_{\text{eff}} = 1/\sum w_i^2 = 7.66$；
+   - 相关系数矩阵前三大主成分解释方差分别为 **PC1 = `28.61%`**（市场公共因子）、**PC2 = `18.09%`**（科技成长 vs 传统价值分化）、**PC3 = `11.20%`**（前三大主成分累计 `57.90%`）；
+   - 只做多 QP 数值解的 KKT 互补松弛残差为 **`3.96e-09`**，对偶可行性最大违背为 **`2.35e-08`**，达到机器级最优精度。
 
-对相关系数矩阵 `C = D^(−1/2)ΣD^(−1/2)` 做特征分解 `C = VΛVᵀ`，按特征值降序得到主成分载荷与解释方差；界面显示前三个主成分和累计解释比例。
+2. **修复后的收缩路径实测（$\Sigma_\alpha$ 谱演化）**：
 
-组合波动率 `σ_p = sqrt(wᵀΣw)`。边际风险贡献与成分风险贡献为：
+| 收缩系数 $\alpha$ | 条件数 $\kappa(\Sigma_\alpha)$ | 收缩后 $\lambda_{\min}(\Sigma_\alpha)$ | 收缩后 $\lambda_{\max}(\Sigma_\alpha)$ | 原始 $\Sigma$ 年化波动 | 最大单股权重 | 有效资产数 $N_{\text{eff}}$ |
+|---:|---:|---:|---:|---:|---:|---:|
+| 0.00 | 48.30 | 0.0086 | 0.4151 | 8.15% | 18.14% | 7.29 |
+| 0.05 | 33.47 | 0.0119 | 0.3981 | 8.16% | 17.49% | 7.59 |
+| 0.10 | 25.08 | 0.0152 | 0.3811 | 8.17% | 16.97% | 7.86 |
+| 0.20 | 15.92 | 0.0218 | 0.3470 | 8.23% | 16.13% | 8.36 |
+| 0.50 | 5.89 | 0.0416 | 0.2449 | 8.64% | 13.70% | 9.72 |
+| 1.00 | 1.00 | 0.0746 | 0.0746 | 12.15% | 8.33% | 12.00 |
 
-```text
-MCTRᵢ = (Σw)ᵢ / σ_p
-CTRᵢ  = wᵢ · MCTRᵢ
-Σᵢ CTRᵢ = σ_p
-```
+3. **样本外表现：单次建仓 vs 月度滚动调仓（2025-01-27 至 2026-10-22，次日开盘撮合，单边成本 15bp）**：
 
-风险占比 `CTRᵢ/σ_p` 之和为 1。该分解使用原始 `Σ`；权重优化使用 `Σ_α`，界面同时标注两种波动率，避免混淆。
+| 回测模式与策略 | 累计收益 | 年化收益 | 年化波动率 | 夏普比率 | 最大回撤 | 调仓次数 | 年化换手率 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 单次建仓：最小方差 ($\alpha=0.05$) | 49.44% | 26.07% | 11.63% | 2.24 | -11.17% | 1 | — |
+| 单次建仓：等权组合 | 40.95% | 21.89% | 14.27% | 1.53 | -17.76% | 1 | — |
+| **月度滚动：最小方差 (Ledoit-Wolf $\alpha^*$)** | **48.18%** | **25.45%** | **11.25%** | **2.26** | **-11.06%** | 21 | 68.30% |
+| 月度滚动：最小方差 (固定 $\alpha=0.05$) | 47.66% | 25.20% | 11.32% | 2.23 | -11.06% | 21 | 73.62% |
+| 月度滚动：风险平价 (Spinu 凸 ERC) | 46.41% | 24.59% | 11.99% | 2.05 | -14.20% | 21 | **35.46%** |
+| 月度滚动：等权基准 | 45.15% | 23.97% | 14.64% | 1.64 | -17.87% | 21 | 31.07% |
 
-### 4.6 样本外与绩效
+结果显示：**Ledoit-Wolf 自适应收缩在收益、波动、夏普与换手率指标上全面优于固定 $\alpha=0.05$（最大回撤持平于 `-11.06%`）**；而 **Spinu 凸 ERC 风险平价在保持夏普 `2.05` 的同时将年化换手率减半至 `35.46%`**，验证了矩阵正则化与风险分散理论在实际金融数据上的显著价值。
 
-`holdout_curve` 从信号日下一交易日的复权开盘入场，按买入持有计算组合与等权基准。绩效定义（无风险利率按 0）：
+---
 
-```text
-累计收益 = 末值 / 初值 − 1
-年化收益 = (1 + 累计收益)^(252 / 持有期数) − 1
-年化波动率 = std(日收益, ddof=1) · √252
-夏普比率 = 年化收益 / 年化波动率
-最大回撤 = min(净值 / 历史最高净值 − 1)
-```
+## 5. 研究筛选评估与《Prune First, Decide Fast》消融实验
 
-年化按 252 个交易日折算，样本较短时年化值波动较大，只用于同口径比较。
+### 5.1 关键词基线（修复全语料库 IDF）与 JEVDB 全算子支持
 
-### 4.7 数值自检
+离线关键词基线采用 Okapi BM25（$k_1=1.5, b=0.75$），本轮修复了此前仅在过滤子集上计算 IDF 导致 AND 模式下所有词 IDF 退化相等的缺陷，改为在全部候选语料 `eligible` 上统计 $N$ 与 $n_t$。JEVDB 语义模式新增支持 `jev_probability`（阈值 $\tau$ 排序）、`jev_choose`（GICS 主题分类）、`jev_score` 与 `prune_then_decide` 两阶段级联。
 
-在 12 资产、420 个交易日的合成数据上（`α=0.1`）：条件数 14.44 → 11.47，PC1 解释 46.4%，风险占比之和为 1，闭式解最小权重 −3.5%（非负约束起作用），收缩路径 `α=0/0.5/1` 的条件数为 14.44/4.78/1.00。以上是**合成数据自检**，不是真实行情结论；原真实数据运行的条件数为 48.30 → 33.47（截至 2025-01-27，252 个共同日收益率）。
+### 5.2 40 条标注集对照与 Prune-First 消融结果
 
-## 5. 研究筛选与评估
+在 12 家公司、40 条人工标注（总计 `40 × 12 = 480` 份文档判定）上的对比与 Prune-First 离线精确重放消融（基于 `2026-11-25` 真实 DeepSeek 逐条判定结果，不伪造任何新模型调用）如下：
 
-### 5.1 关键词基线
+| 检索与判定模式 | 评估文档数 | 剪枝比例 | 宏 Precision | 宏 Recall | 宏 F1 | MRR | 精确匹配率 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 关键词 AND + BM25（全语料 IDF） | 480 | — | 0.850 | 0.769 | 0.792 | 0.850 | 0.700 |
+| 关键词 OR + BM25（全语料 IDF） | 480 | — | 0.729 | 0.844 | 0.730 | 0.925 | 0.500 |
+| JEVDB 全量 `jev_holds`（DeepSeek 兼容层） | 480/480 | 0.0% | 0.826 | **0.969** | **0.865** | 0.906 | 0.600 |
+| **Prune-First + JEVDB (`prune_k=3`, 含回退)** | **328/480** | **31.7%** | **0.854** | 0.923 | 0.863 | — | **0.650** |
+| Prune-First + JEVDB (`prune_k=4`, 含回退) | 334/480 | 30.4% | 0.848 | 0.923 | 0.859 | — | 0.625 |
+| Prune-First + JEVDB (`prune_k=6`, 含回退) | 341/480 | 29.0% | 0.844 | 0.923 | 0.856 | — | 0.625 |
 
-默认要求全部词命中（AND），可切换 OR；支持引号短语、英文停用词、轻量词形归一和 CJK bigram，并按 BM25 排序，结果附带 `match_score`。英文按停用词过滤后做轻量词形归一（复数、`-ies`）；中文没有分词器时使用相邻两字 bigram。BM25 采用 `k1=1.5, b=0.75`：
+**核心发现**：
+1. 纯关键词 AND 精确率高但有 6 条查询（同义词/上位词如 `technology mega-caps`、`graphics processors`）直接返回空集；
+2. 全量 JEVDB 召回率高达 `0.969`，但存在“相关就选”的过度包含（**14 条**查询存在冗余命中，另有 2 条仅漏选，合计 16 条非精确匹配），拉低精确率（`0.826`）与精确匹配率（`0.600`）；
+3. **Prune-First (`prune_k=3`) 两阶段剪枝**在词面有足够交集时先用高速 BM25-OR 截断明显无关文档、在词面命中 $<2$ 篇时优雅回退至全量语义判定（40 条查询中共 24 条触发回退，含 2 条零命中与 22 条单命中；其余 16 条完成有效剪枝），最终**减少 31.7% 的语义模型调用量**，同时把过度包含的噪声文档挡在第一阶段之外，使宏精确率升至 **`0.854`**、精确匹配率升至 **`0.650`**，几乎无损保持宏 F1（`0.863`）！
 
-```text
-score(q,d) = Σ_t idf(t) · f(t,d)·(k1+1) / (f(t,d) + k1·(1−b+b·|d|/avg|d|))
-idf(t) = ln(1 + (N − n_t + 0.5)/(n_t + 0.5))
-```
+### 5.3 JEVDB 实际运行与协议适配边界
 
-短语命中在 BM25 分数上叠加出现次数，作为排序加权。它是透明的词面基线，不能等同 JEVDB 语义质量；关键词结果不会自动改写成“语义结果”。
+2026-11-25 在 WSL2 Ubuntu 24.04 验证 `jevdb==0.1.0` + `duckdb==1.4.3`：默认 Typesafe 后端因地区限制返回 `HTTP 451`，故切至 `MATRIX_BACKEND=llm`；因 DeepSeek 接口仅接受 `response_format={"type":"json_object"}` 而 JEVDB 固定发送 `json_schema`，通过本地协议适配层 [scripts/jev_llm_proxy.py](../scripts/jev_llm_proxy.py) 注入 schema 约束并校验重试，完成 40 条真实查询（40/40 成功，0 最终错误；代理入口累计处理 41 批次请求含 1 次冒烟，期间 5 次触发 schema 校验内部重试；合计 `80,481` tokens，累计约 `403` 秒）。注：记录中的 `deepseek-flash` 为当次兼容端点配置的模型标识，复现时需按实际供应商模型名填写（如 `deepseek-chat`）。详见 [docs/verification/jevdb-smoke-2026-11-25.md](verification/jevdb-smoke-2026-11-25.md)。
 
-### 5.2 评估设计
+---
 
-`evaluation/documents.csv` 是 12 家公司的简短介绍（小组成员自行撰写，不复制百科原文）；`evaluation/labels.csv` 是 40 条“查询 → 相关公司代码”的人工标注。相关性按业务判断，可能与关键词是否出现无关。
+## 6. 模拟交易机制与简化假设
 
-指标以公司代码为相关性单位：
+[matrixlab/trading.py](../matrixlab/trading.py) 实现严格的教学纸面交易账本：
+- **成交价格假设**：信号日收盘后生成订单，严格在下一交易日复权开盘价成交；买入按 `open × (1 + slippage_bps/10000)` 上调，卖出下调，执行价保留 4 位小数；手续费按 `notional × commission_bps/10000` 四舍五入至美分单列。
+- **原子性与幂等性**：现金以整数微美元（`1e-6 USD`）存储；单批订单在 SQLite `BEGIN IMMEDIATE` 事务中先卖后买，任何一单资金不足、可卖持仓不足或缺少次日开盘价时整批回滚；相同 `request_id` 与相同负载幂等返回，篡改负载直接拒绝；账户时钟单调递增。
+- **简化假设声明**：统一采用总回报复权价与整数模拟份额，不再重复发放股息或拆股；单账户、无杠杆、只做多，不还原真实券商 T+1/T+2 结算、停牌涨跌停与税费。
 
-```text
-P = |命中 ∩ 相关| / |命中|        （命中为空时记 0）
-R = |命中 ∩ 相关| / |相关|
-F1 = 2PR / (P + R)
-MRR = 1 / 第一个相关结果的排名     （没有相关结果时记 0）
-精确匹配 = 命中集合与相关集合完全相同
-```
+---
 
-宏平均是 40 条查询指标的算术平均；微平均按全部查询汇总命中与相关计数后计算。空结果记 P=0 会压低关键词基线的宏平均精确率，这是有意的惩罚：对用户来说，返回空列表并不等于“没有错误”。
+## 7. 测试、复现与证据清单
 
-### 5.3 结果与错误分析
-
-| 模式 | 宏平均 Precision | 宏平均 Recall | 宏平均 F1 | MRR | 精确匹配率 |
-|---|---:|---:|---:|---:|---:|
-| 关键词 AND + BM25 | 0.850 | 0.769 | 0.793 | 0.850 | 0.700 |
-| 关键词 OR + BM25 | 0.729 | 0.844 | 0.730 | 0.925 | 0.500 |
-| JEVDB（DeepSeek 兼容端点） | 0.826 | 0.969 | 0.865 | 0.906 | 0.600 |
-
-JEVDB 的召回率明显更高（0.969 对 0.769），F1 与 MRR 也更高；代价是精确率略低（0.826 对 0.850）。三种模式的错误形态不同：
-
-| 现象 | 关键词 AND | JEVDB |
-|---|---:|---:|
-| 返回空结果 | 6 条 | 0 条 |
-| 有冗余选中 | 0 条 | 16 条 |
-| 有漏选 | 13 条 | 3 条 |
-| 精确匹配 | 28/40 | 24/40 |
-
-关键词的失败集中在词形、同义和上位词：`graphics processors` 对 `graphics processing units`、`search engine` 对 `Google Search`、`operating systems` 对 `Windows/Android`、`technology mega-caps` 对六家公司的分散表述。它几乎不产生冗余（精确率在非空查询上都是 1.0），但 6 条查询直接返回空。
-
-JEVDB 的失败主要是“相关就选”的过度包含：`cloud computing` 额外选中 AAPL/NVDA，`digital payments` 命中 6 家，`data centers` 命中 6 家，`search engine` 额外选 MSFT。冗余次数最多的是 AAPL（4 次）、GOOGL（4 次）、MSFT/WMT/META（各 3 次）。漏选只有 3 处：`household products` 漏 WMT、`streaming video` 漏 AMZN、`consumer staples` 漏 JNJ。
-
-因此结论不是“语义筛选全面更优”，而是**它用精确率换召回率**：当用户希望“尽量不漏”时语义模式更好；当用户要求结果集合干净时，关键词基线反而更稳。精确匹配率也是关键词更高（0.700 对 0.600）。要同时提高两者，需要更明确的业务定义、阈值或二次判定，而不是简单换后端。
-
-### 5.4 JEVDB 实际运行状态
-
-2026-11-25 在 WSL2 Ubuntu 24.04 安装 `jevdb==0.1.0` 与 `duckdb==1.4.3`，扩展可加载并注册 `jev_holds`、`jev_score`、`jev_choose` 等函数。默认 Typesafe 后端返回：
+2026-11-27 在 Linux（Python 3.13 + `jevdb==0.1.0` + `duckdb==1.4.3` + PySide6 无头环境）运行全量测试：
 
 ```text
-HTTP 451: Typesafe is not available in your region.
+44 passed in 6.95s
 ```
 
-因此改走 `MATRIX_BACKEND=llm`。DeepSeek 的 Chat Completions 只接受 `response_format={"type":"json_object"}`，而 JEVDB 固定发送 `json_schema`，直连返回 HTTP 400（`This response_format type is unavailable now`）。为此增加本地协议适配层 `scripts/jev_llm_proxy.py`：把 schema 注入提示词、以 `json_object` 调用上游、按 schema 校验并在失败时重试。**语义判断仍由 DeepSeek 完成**，代理只做格式转换，不能称作 JEVDB 原生支持的提供商。
+新增覆盖：收缩路径正则化特征值单调性、Ledoit-Wolf 解析公式双循环精确核对、KKT 残差校验、Spinu 凸 ERC 风险占比等权验证、月度滚动回测防未来函数、全语料库 BM25 IDF 区分度、真实 `jevdb 0.1.0` 的 `jev_probability`/`jev_choose`/`prune_then_decide` 端到端链路，以及四层 Agent 分级审批门控。
 
-实际运行（`deepseek-flash`，`temperature=0`）：
-
-```text
-40 条查询，40 条成功，0 错误
-上游请求 41 次，其中 5 次为 schema 校验重试，最终失败 0
-prompt 37689 tokens，completion 42792 tokens，合计 80481
-累计约 403 秒，单次最长 56.3 秒
-```
-
-逐条结果见 `evaluation/results/both-deepseek.json`；扩展注册、451、400、代理转换与上述统计的完整证据见 `docs/verification/jevdb-smoke-2026-11-25.md`。
-
-仍需注意：这是单次运行、40 条查询；温度设 0 只能降低而不能消除模型波动，更换模型、关闭兼容层或改用 Typesafe 都会改变指标；费用需按供应商当期价格核对，本报告只记录 token 数。
-
-## 6. 模拟交易机制
-
-固定研究日收盘后生成信号，在下一交易日复权开盘按方向计入滑点，手续费单列。组合调仓按信号日收盘估算整数份额，预留 5% 现金；次日跳空可能使资金不足，此时整批拒绝。
-
-账户现金以整数微美元保存。每批订单使用 SQLite 即时写事务，先卖后买，任意无效订单导致现金、持仓、成交和快照全部回滚。同一请求编号与相同内容只成交一次；相同编号用于其他内容会被拒绝。时钟只能前进，无下一日行情、缺失开盘价或持仓估值价时不假设成交。
-
-统一复权价格已经包含供应商的拆股和股息调整，所以模拟份额不再重复分拆或收取股息。这是明确简化的课程价格单位，不还原真实历史股数、结算、停牌、税费和券商行为。样本外曲线使用可分份额、一次建仓后持有；逐笔账本使用整数份额，两者结果不可直接视为相同。
-
-## 7. 测试、复现与证据
-
-2026-11-25 在本机运行：
-
-```text
-35 passed, 2 skipped
-```
-
-跳过的是 Windows 无法导入 `jevdb` 的两条 JEVDB 测试。覆盖范围包括：协方差与闭式解对照、PCA 正交性与解释方差、风险贡献求和、收缩路径端点、样本外曲线、绩效指标、未来数据隔离、订单边界、费用核对、整批回滚、重复提交、资料时间过滤、桌面界面与 Streamlit 界面流程。
-
-```bash
-python -m pytest -q
-python evaluation/evaluate.py --mode keyword --operator all
-python evaluation/evaluate.py --mode keyword --operator any
-python evaluation/evaluate.py --mode both          # 需可用端点
-```
-
-JEVDB 评估在 WSL 的独立 venv 中执行，`MATRIX_API_ENDPOINT` 指向本机协议适配层；代理启动与端点配置见 `docs/runbook.md`。复现时需要先 `fetch` 行情、`archive` 历史资料，并在本地 `.env` 配置端点与密钥。
-
-报告中的关键结论与对应证据：
-
-| 结论 | 证据文件 |
+| 关键结论 | 对应证据文件 |
 |---|---|
-| 关键词 AND/OR 指标 | `evaluation/results/keyword-all.json`、`keyword-any.json` |
-| JEVDB 与关键词对照 | `evaluation/results/both-deepseek.json` |
-| 无密钥时的显式报错 | `evaluation/results/jevdb-blocked.json` |
-| 扩展注册、451、400、代理转换 | `docs/verification/jevdb-smoke-2026-11-25.md`、`.json` |
-| 依赖、权限与许可 | `docs/tools.md`、`requirements.lock` |
-| 界面展示 | `docs/images/desktop-*.png`、`paper-trading.png` |
+| 全量 BM25 与 Prune-First 消融 | [evaluation/results/keyword-all.json](../evaluation/results/keyword-all.json)、[keyword-any.json](../evaluation/results/keyword-any.json)、[prune-ablation.json](../evaluation/results/prune-ablation.json) |
+| DeepSeek 40 条真实 JEVDB 评估 | [evaluation/results/both-deepseek.json](../evaluation/results/both-deepseek.json)、[jevdb-smoke-2026-11-25.md](verification/jevdb-smoke-2026-11-25.md) |
+| Multi-Agent 交叉核验与 Bug 修复记录 | [docs/verification/multi-agent-audit-2026-11-27.md](verification/multi-agent-audit-2026-11-27.md) |
+| 题目一书稿修订与自动验算 | [manuscript/chapter8_eigenvalues_and_psd_revised.md](../manuscript/chapter8_eigenvalues_and_psd_revised.md)、[manuscript/revision_notes.md](../manuscript/revision_notes.md)、[manuscript/verify_manuscript_math.py](../manuscript/verify_manuscript_math.py) |
+| Skills 审计、依赖与许可 | [docs/tools.md](tools.md)、[skills/](../skills/)、[THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) |
 
-## 8. 局限
+---
 
-- 股票池只有 12 只美国大盘股，存在幸存者偏差；结论不外推到全市场。
-- 历史资料来自百科叙述，不是财报或电话会议；语义质量仍需独立核验。
-- 评估集只有 40 条人工标注，且文档是简短自写摘要，只用于诊断，不支持统计显著性结论。
-- JEVDB 语义结果来自 DeepSeek 兼容端点与本地协议适配层，不是 Typesafe 原生服务；只运行一次 40 条查询，费用未按当期价格折算。
-- 关键词与 JEVDB 的对比受“空结果记 P=0”的口径影响；换口径会改变宏平均精确率。
-- 模拟交易为单账户、只做多、整数份额、统一复权价，不还原真实券商结算、停牌、税费和公司行动。
-- 样本外只做单次建仓持有，尚未加入按月滚动调仓、换手率和基准 SPY。
-- 工作副本不含原始数据、密钥和成员贡献记录，复现与提交前需补齐。
+## 8. 局限与后续改进方向
 
-## 9. 成员贡献与 multi-agent 核验
+- 股票池规模为 12 只美国大盘股，存在幸存者偏差，后续可扩展至 30–50 只跨行业成分股及 SPY 基准；
+- 历史文本仍以维基百科存档与 40 条自建评估集为主，生产级金融研究应接入带精确披露日期 `filingDate` 的 SEC EDGAR 10-K/10-Q 文本；
+- `prune_ablation` 是基于真实 DeepSeek 判定结果的确定性重放消融，未单独测量真实网络往返下的端到端延迟节省，待后续配额充裕时可补充真机耗时对照；
+- 个人自述录屏按作业要求由各成员在最终提交时一并附交。
 
-此项必须由实际参与的 3—5 名成员填写，不能虚构。建议每人记录：实际负责的文件/提交、独立提出的问题、核验命令与结果、发现并修正的问题、报告的对应章节。multi-agent 核验应至少覆盖数学推导、数据与未来函数、交易账务、引用与许可四类，并保存使用的模型/工具、提示、发现和修正记录。当前仓库只有模板，提交前必须补齐。
+---
 
-## 10. 参考
+## 9. 成员贡献与 Multi-Agent 核验
 
-- JEVDB 作者仓库：<https://github.com/PDAIS/JEVDB>
-- 题目论文：<https://arxiv.org/abs/2610.02046v1>
-- DeepSeek JSON Output 文档：<https://api-docs.deepseek.com/zh-cn/guides/json_mode/>
-- 工具与许可：`docs/tools.md`
-- 运行说明：`docs/runbook.md`
-- JEVDB 本机验证记录：`docs/verification/jevdb-smoke-2026-11-25.md`
-- 评估集说明：`evaluation/README.md`
+本项目由 5 名成员分工完成：**吕云迪（组长）**、**徐瑞**、**闫涛**、**吴昀泽**、**李晨**，详细模块分工、Git 提交对应与独立核验证据见 [docs/contributions.md](contributions.md)。本轮已完成两组独立对抗式 Agent 交叉审计（代码/防未来函数/安全审计 Agent、数学推导/习题/参考文献核验 Agent），共闭环修复 15+ 项代码/文档/数学细节缺陷及 8 页 10 处原课程课件勘误，完整记录见 [docs/verification/multi-agent-audit-2026-11-27.md](verification/multi-agent-audit-2026-11-27.md)。
+
+## 10. 参考文献
+
+1. Wang, Z., Yan, H., Zhao, F., & Liu, C. (2026). *Prune First, Decide Fast: Scalable Semantic Query Processing with JEVDB*. arXiv:2610.02046v1. <https://arxiv.org/abs/2610.02046v1>
+2. PDAIS Lab. *JEVDB Open-Source Repository*. <https://github.com/PDAIS/JEVDB>
+3. Meyer, C. D. (2000). *Matrix Analysis and Applied Linear Algebra*. SIAM.
+4. Horn, R. A., & Johnson, C. R. (2013). *Matrix Analysis* (2nd ed.). Cambridge University Press.
+5. Strang, G. (2019). *Linear Algebra and Learning from Data*. Wellesley-Cambridge Press.
+6. Ledoit, O., & Wolf, M. (2004). A well-conditioned estimator for large-dimensional covariance matrices. *Journal of Multivariate Analysis*, 88(2), 365–411.
+7. Spinu, F. (2013). An algorithm for computing risk parity weights. *SSRN Electronic Journal*, 2297383.
+8. DeepSeek API Documentation: JSON Output Guide. <https://api-docs.deepseek.com/zh-cn/guides/json_mode/>

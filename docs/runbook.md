@@ -36,13 +36,16 @@ TMPDIR="$PWD/.cache/tmp" PIP_CACHE_DIR="$PWD/.cache/pip" .venv/bin/python -m pip
 4. 确认订单后，程序使用下一交易日的复权开盘价并计入滑点和手续费。资金不足或任何一单无效时整批回滚。也可手动提交一只股票的订单。
 5. 推进模拟日期，查看权益和逐笔成交，导出研究JSON、权重CSV及成交CSV。界面变化后须重新计算权重；账户时钟不能回退。
 
-一键数值演示（不包含语义模型调用）：
+一键数值演示与四层 Agent 工作流演示（不自动执行高风险写库，需 `--approve` 显式授权）：
 
 ```bash
 .venv/bin/python -m matrixlab.cli demo --asof 2025-01-27
-.venv/bin/python -m matrixlab.cli research 'cloud software' --asof 2025-01-27 --mode keyword
+.venv/bin/python -m matrixlab.cli research 'cloud software' --asof 2025-01-27 --mode keyword --operator all
+.venv/bin/python -m matrixlab.cli research 'cloud computing' --asof 2025-01-27 --mode jevdb --jev-op prune_then_decide --prune-k 6
+.venv/bin/python -m matrixlab.cli agent 'cloud software' --asof 2025-01-27 --mode keyword --operator any
+.venv/bin/python -m matrixlab.cli agent 'cloud software' --asof 2025-01-27 --mode keyword --operator any --approve
 .venv/bin/python evaluation/evaluate.py --mode keyword --operator all
-.venv/bin/python evaluation/evaluate.py --mode keyword --operator any
+.venv/bin/python evaluation/evaluate.py --mode prune_ablation
 ```
 
 `evaluation/evaluate.py` 默认使用 `evaluation/documents.csv` 的12家公司人工标注集（40条查询），输出 precision/recall/F1/MRR；换用真实数据时加 `--documents data/documents.csv`。评估结果在 `evaluation/results/`。
@@ -90,7 +93,7 @@ MATRIX_API_MODEL=供应商模型名
 
 条件只作为SQL字符串常量；程序不执行用户提供的任意SQL。最多处理200条资料，并限制并发、超时和重试。资料正文会发送给配置的模型服务；凭证读取自环境，研究导出记录不保存凭证。API不可用时明确报错，不自动伪装成语义结果。
 
-当前本机验证状态（2026-11-25）：WSL2 中 `jevdb==0.1.0` 可加载并注册 `jev_holds` 等函数；默认 Typesafe 后端返回 HTTP 451（地区限制），改走 `MATRIX_BACKEND=llm` 与 DeepSeek 兼容端点后，经上述兼容层完成 40 条查询，0 错误，宏 F1 0.865（关键词 AND 为 0.793），证据见 [verification/jevdb-smoke-2026-11-25.md](verification/jevdb-smoke-2026-11-25.md)。复现：
+当前本机验证状态（2026-11-25）：WSL2 中 `jevdb==0.1.0` 可加载并注册 `jev_holds` 等函数；默认 Typesafe 后端返回 HTTP 451（地区限制），改走 `MATRIX_BACKEND=llm` 与 DeepSeek 兼容端点后，经上述兼容层完成 40 条查询，0 错误，宏 F1 0.865（关键词 AND 为 0.792），证据见 [verification/jevdb-smoke-2026-11-25.md](verification/jevdb-smoke-2026-11-25.md)。复现：
 
 ```bash
 .venv/bin/python evaluation/evaluate.py --mode both

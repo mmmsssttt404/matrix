@@ -13,6 +13,7 @@ JEVDB 0.1.0 的 llm 后端固定发送
 from __future__ import annotations
 
 import argparse
+import hmac
 import json
 import os
 import time
@@ -23,9 +24,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 UPSTREAM = os.environ.get("UPSTREAM_BASE", "https://api.deepseek.com/v1").rstrip("/")
-DEFAULT_MODEL = os.environ.get("UPSTREAM_MODEL", "deepseek-flash")
-LOG_PATH = Path(os.environ.get("PROXY_LOG", "/tmp/jev_proxy.jsonl"))
+DEFAULT_MODEL = os.environ.get("UPSTREAM_MODEL", "deepseek-chat")
+LOG_PATH = Path(os.environ.get("PROXY_LOG", str(Path.home() / ".cache" / "matrixlab" / "jev_proxy.jsonl")))
 MAX_ATTEMPTS = int(os.environ.get("PROXY_ATTEMPTS", "3"))
+MAX_BODY_BYTES = 4_000_000
 
 
 def _api_key() -> str:
@@ -41,6 +43,7 @@ def _api_key() -> str:
 
 
 KEY = _api_key()
+PROXY_TOKEN = os.environ.get("PROXY_TOKEN") or KEY
 
 
 def _check(value, schema) -> str | None:
@@ -79,6 +82,8 @@ def _log(record):
     LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
     with LOG_PATH.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(record, ensure_ascii=False) + "\n")
+    if os.name == "posix":
+        os.chmod(LOG_PATH, 0o600)
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -86,6 +91,9 @@ class Handler(BaseHTTPRequestHandler):
 
     def log_message(self, fmt, *args):
         pass
+
+    def _authorized(self) -> bool:
+        return hmac.compare_digest(self.headers.get("Authorization", ""), "Bearer " + PROXY_TOKEN)
 
     def _reply(self, code, payload):
         data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
@@ -96,11 +104,30 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
     def do_GET(self):
+        if not self._authorized():
+            self._reply(401, {"error": "unauthorized"})
+            return
+        if self.path != "/health":
+            self._reply(404, {"error": "not found"})
+            return
         self._reply(200, {"ok": True, "upstream": UPSTREAM})
 
     def do_POST(self):
-        length = int(self.headers.get("Content-Length") or 0)
-        body = json.loads(self.rfile.read(length) or b"{}")
+        if not self._authorized():
+            self._reply(401, {"error": "unauthorized"})
+            return
+        if self.path not in {"/v1/chat/completions", "/chat/completions"}:
+            self._reply(404, {"error": "not found"})
+            return
+        try:
+            length = int(self.headers.get("Content-Length") or 0)
+            if not 0 < length <= MAX_BODY_BYTES:
+                self._reply(413, {"error": "request too large or empty"})
+                return
+            body = json.loads(self.rfile.read(length))
+        except (ValueError, UnicodeDecodeError):
+            self._reply(400, {"error": "invalid json request"})
+            return
         started = time.perf_counter()
         schema = None
         response_format = body.get("response_format") or {}
@@ -160,7 +187,7 @@ class Handler(BaseHTTPRequestHandler):
             "trail": trail,
         })
         if result is None or problem is not None:
-            self._reply(502, {"error": {"message": "proxy could not satisfy schema: " + str(problem),
+            self._reply(502, {"error": {"message": "proxy could not satisfy schema validation",
                                         "type": "proxy_error"}})
             return
         self._reply(200, result)

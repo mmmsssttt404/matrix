@@ -1,0 +1,3765 @@
+{
+  "generated_at": "2026-11-27T06:15:45.160599+00:00",
+  "asof": "2026-11-25",
+  "mode": "prune_ablation",
+  "source_jevdb_results": "both-deepseek.json",
+  "ablation": [
+    {
+      "prune_k": 3,
+      "summary": {
+        "queries": 40,
+        "scored": 40,
+        "errors": 0,
+        "macro_precision": 0.8542,
+        "macro_recall": 0.9229,
+        "macro_f1": 0.8625,
+        "mrr": 0.925,
+        "exact_match_rate": 0.65,
+        "micro_precision": 0.806,
+        "micro_recall": 0.8852,
+        "prune_k": 3,
+        "total_docs_evaluated": 328,
+        "total_possible_docs": 480,
+        "docs_pruned_ratio": 0.3167,
+        "fallback_queries": 24
+      },
+      "queries": [
+        {
+          "query": "cloud computing",
+          "relevant": [
+            "AMZN",
+            "GOOGL",
+            "MSFT"
+          ],
+          "error": null,
+          "candidates_sent": 3,
+          "fallback": false,
+          "matched": [
+            "AMZN",
+            "GOOGL",
+            "MSFT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "enterprise software",
+          "relevant": [
+            "MSFT"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "MSFT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "AI chips",
+          "relevant": [
+            "NVDA"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "GOOGL",
+            "NVDA"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 0.5,
+          "exact_match": false
+        },
+        {
+          "query": "graphics processors",
+          "relevant": [
+            "NVDA"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "NVDA"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "online retail",
+          "relevant": [
+            "AMZN",
+            "WMT"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "AMZN",
+            "WMT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "e-commerce",
+          "relevant": [
+            "AMZN",
+            "WMT"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "AMZN",
+            "WMT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "social media advertising",
+          "relevant": [
+            "META"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "GOOGL",
+            "META"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 0.5,
+          "exact_match": false
+        },
+        {
+          "query": "digital advertising",
+          "relevant": [
+            "AMZN",
+            "GOOGL",
+            "META"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "GOOGL",
+            "META"
+          ],
+          "precision": 1.0,
+          "recall": 0.6667,
+          "f1": 0.8,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "search engine",
+          "relevant": [
+            "GOOGL"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "GOOGL",
+            "MSFT"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "investment banking",
+          "relevant": [
+            "JPM"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "JPM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "consumer banking",
+          "relevant": [
+            "JPM"
+          ],
+          "error": null,
+          "candidates_sent": 3,
+          "fallback": false,
+          "matched": [
+            "JPM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "credit cards",
+          "relevant": [
+            "JPM"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "JPM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "mortgage lending",
+          "relevant": [
+            "JPM"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "JPM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "pharmaceuticals",
+          "relevant": [
+            "JNJ"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "JNJ"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "medical devices",
+          "relevant": [
+            "JNJ"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "JNJ"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "consumer health products",
+          "relevant": [
+            "JNJ"
+          ],
+          "error": null,
+          "candidates_sent": 3,
+          "fallback": false,
+          "matched": [
+            "JNJ",
+            "PG"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "oil and gas",
+          "relevant": [
+            "XOM"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "XOM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "refining",
+          "relevant": [
+            "XOM"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "XOM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "household products",
+          "relevant": [
+            "PG",
+            "WMT"
+          ],
+          "error": null,
+          "candidates_sent": 3,
+          "fallback": false,
+          "matched": [
+            "PG"
+          ],
+          "precision": 1.0,
+          "recall": 0.5,
+          "f1": 0.6667,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "personal care",
+          "relevant": [
+            "PG"
+          ],
+          "error": null,
+          "candidates_sent": 3,
+          "fallback": false,
+          "matched": [
+            "PG"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "soft drinks",
+          "relevant": [
+            "KO"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "KO"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "bottled water",
+          "relevant": [
+            "KO"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "KO"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "grocery retail",
+          "relevant": [
+            "WMT"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "WMT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "discount stores",
+          "relevant": [
+            "WMT"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "WMT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "smartphones",
+          "relevant": [
+            "AAPL"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "AAPL",
+            "GOOGL"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "wearables",
+          "relevant": [
+            "AAPL"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "AAPL",
+            "META"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "personal computers",
+          "relevant": [
+            "AAPL"
+          ],
+          "error": null,
+          "candidates_sent": 3,
+          "fallback": false,
+          "matched": [
+            "AAPL",
+            "MSFT"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "streaming video",
+          "relevant": [
+            "AMZN",
+            "GOOGL"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "AAPL",
+            "GOOGL"
+          ],
+          "precision": 0.5,
+          "recall": 0.5,
+          "f1": 0.5,
+          "reciprocal_rank": 0.5,
+          "exact_match": false
+        },
+        {
+          "query": "data centers",
+          "relevant": [
+            "AMZN",
+            "GOOGL",
+            "MSFT",
+            "NVDA"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "AAPL",
+            "AMZN",
+            "GOOGL",
+            "META",
+            "MSFT",
+            "NVDA"
+          ],
+          "precision": 0.6667,
+          "recall": 1.0,
+          "f1": 0.8,
+          "reciprocal_rank": 0.5,
+          "exact_match": false
+        },
+        {
+          "query": "virtual reality",
+          "relevant": [
+            "META"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "META"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "digital payments",
+          "relevant": [
+            "JPM"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "GOOGL",
+            "META"
+          ],
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_match": false
+        },
+        {
+          "query": "asset management",
+          "relevant": [
+            "JPM"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "JPM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "low-carbon energy",
+          "relevant": [
+            "XOM"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "XOM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "paper products",
+          "relevant": [
+            "PG"
+          ],
+          "error": null,
+          "candidates_sent": 3,
+          "fallback": false,
+          "matched": [
+            "PG",
+            "WMT"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "juice and beverages",
+          "relevant": [
+            "KO"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "KO"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "warehouse clubs",
+          "relevant": [
+            "WMT"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "WMT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "technology mega-caps",
+          "relevant": [
+            "AAPL",
+            "AMZN",
+            "GOOGL",
+            "META",
+            "MSFT",
+            "NVDA"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "AAPL",
+            "AMZN",
+            "GOOGL",
+            "META",
+            "MSFT",
+            "NVDA"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "consumer staples",
+          "relevant": [
+            "JNJ",
+            "KO",
+            "PG",
+            "WMT"
+          ],
+          "error": null,
+          "candidates_sent": 3,
+          "fallback": false,
+          "matched": [
+            "WMT"
+          ],
+          "precision": 1.0,
+          "recall": 0.25,
+          "f1": 0.4,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "semiconductor accelerators",
+          "relevant": [
+            "NVDA"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "NVDA"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "operating systems",
+          "relevant": [
+            "AAPL",
+            "GOOGL",
+            "MSFT"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "AAPL",
+            "GOOGL",
+            "MSFT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        }
+      ]
+    },
+    {
+      "prune_k": 4,
+      "summary": {
+        "queries": 40,
+        "scored": 40,
+        "errors": 0,
+        "macro_precision": 0.8479,
+        "macro_recall": 0.9229,
+        "macro_f1": 0.8589,
+        "mrr": 0.925,
+        "exact_match_rate": 0.625,
+        "micro_precision": 0.7941,
+        "micro_recall": 0.8852,
+        "prune_k": 4,
+        "total_docs_evaluated": 334,
+        "total_possible_docs": 480,
+        "docs_pruned_ratio": 0.3042,
+        "fallback_queries": 24
+      },
+      "queries": [
+        {
+          "query": "cloud computing",
+          "relevant": [
+            "AMZN",
+            "GOOGL",
+            "MSFT"
+          ],
+          "error": null,
+          "candidates_sent": 4,
+          "fallback": false,
+          "matched": [
+            "AMZN",
+            "GOOGL",
+            "MSFT",
+            "NVDA"
+          ],
+          "precision": 0.75,
+          "recall": 1.0,
+          "f1": 0.8571,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "enterprise software",
+          "relevant": [
+            "MSFT"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "MSFT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "AI chips",
+          "relevant": [
+            "NVDA"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "GOOGL",
+            "NVDA"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 0.5,
+          "exact_match": false
+        },
+        {
+          "query": "graphics processors",
+          "relevant": [
+            "NVDA"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "NVDA"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "online retail",
+          "relevant": [
+            "AMZN",
+            "WMT"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "AMZN",
+            "WMT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "e-commerce",
+          "relevant": [
+            "AMZN",
+            "WMT"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "AMZN",
+            "WMT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "social media advertising",
+          "relevant": [
+            "META"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "GOOGL",
+            "META"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 0.5,
+          "exact_match": false
+        },
+        {
+          "query": "digital advertising",
+          "relevant": [
+            "AMZN",
+            "GOOGL",
+            "META"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "GOOGL",
+            "META"
+          ],
+          "precision": 1.0,
+          "recall": 0.6667,
+          "f1": 0.8,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "search engine",
+          "relevant": [
+            "GOOGL"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "GOOGL",
+            "MSFT"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "investment banking",
+          "relevant": [
+            "JPM"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "JPM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "consumer banking",
+          "relevant": [
+            "JPM"
+          ],
+          "error": null,
+          "candidates_sent": 4,
+          "fallback": false,
+          "matched": [
+            "JPM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "credit cards",
+          "relevant": [
+            "JPM"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "JPM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "mortgage lending",
+          "relevant": [
+            "JPM"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "JPM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "pharmaceuticals",
+          "relevant": [
+            "JNJ"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "JNJ"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "medical devices",
+          "relevant": [
+            "JNJ"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "JNJ"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "consumer health products",
+          "relevant": [
+            "JNJ"
+          ],
+          "error": null,
+          "candidates_sent": 4,
+          "fallback": false,
+          "matched": [
+            "JNJ",
+            "PG"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "oil and gas",
+          "relevant": [
+            "XOM"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "XOM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "refining",
+          "relevant": [
+            "XOM"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "XOM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "household products",
+          "relevant": [
+            "PG",
+            "WMT"
+          ],
+          "error": null,
+          "candidates_sent": 4,
+          "fallback": false,
+          "matched": [
+            "PG"
+          ],
+          "precision": 1.0,
+          "recall": 0.5,
+          "f1": 0.6667,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "personal care",
+          "relevant": [
+            "PG"
+          ],
+          "error": null,
+          "candidates_sent": 3,
+          "fallback": false,
+          "matched": [
+            "PG"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "soft drinks",
+          "relevant": [
+            "KO"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "KO"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "bottled water",
+          "relevant": [
+            "KO"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "KO"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "grocery retail",
+          "relevant": [
+            "WMT"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "WMT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "discount stores",
+          "relevant": [
+            "WMT"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "WMT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "smartphones",
+          "relevant": [
+            "AAPL"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "AAPL",
+            "GOOGL"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "wearables",
+          "relevant": [
+            "AAPL"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "AAPL",
+            "META"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "personal computers",
+          "relevant": [
+            "AAPL"
+          ],
+          "error": null,
+          "candidates_sent": 3,
+          "fallback": false,
+          "matched": [
+            "AAPL",
+            "MSFT"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "streaming video",
+          "relevant": [
+            "AMZN",
+            "GOOGL"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "AAPL",
+            "GOOGL"
+          ],
+          "precision": 0.5,
+          "recall": 0.5,
+          "f1": 0.5,
+          "reciprocal_rank": 0.5,
+          "exact_match": false
+        },
+        {
+          "query": "data centers",
+          "relevant": [
+            "AMZN",
+            "GOOGL",
+            "MSFT",
+            "NVDA"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "AAPL",
+            "AMZN",
+            "GOOGL",
+            "META",
+            "MSFT",
+            "NVDA"
+          ],
+          "precision": 0.6667,
+          "recall": 1.0,
+          "f1": 0.8,
+          "reciprocal_rank": 0.5,
+          "exact_match": false
+        },
+        {
+          "query": "virtual reality",
+          "relevant": [
+            "META"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "META"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "digital payments",
+          "relevant": [
+            "JPM"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "GOOGL",
+            "META"
+          ],
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_match": false
+        },
+        {
+          "query": "asset management",
+          "relevant": [
+            "JPM"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "JPM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "low-carbon energy",
+          "relevant": [
+            "XOM"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "XOM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "paper products",
+          "relevant": [
+            "PG"
+          ],
+          "error": null,
+          "candidates_sent": 4,
+          "fallback": false,
+          "matched": [
+            "PG",
+            "WMT"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "juice and beverages",
+          "relevant": [
+            "KO"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "KO"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "warehouse clubs",
+          "relevant": [
+            "WMT"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "WMT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "technology mega-caps",
+          "relevant": [
+            "AAPL",
+            "AMZN",
+            "GOOGL",
+            "META",
+            "MSFT",
+            "NVDA"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "AAPL",
+            "AMZN",
+            "GOOGL",
+            "META",
+            "MSFT",
+            "NVDA"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "consumer staples",
+          "relevant": [
+            "JNJ",
+            "KO",
+            "PG",
+            "WMT"
+          ],
+          "error": null,
+          "candidates_sent": 4,
+          "fallback": false,
+          "matched": [
+            "WMT"
+          ],
+          "precision": 1.0,
+          "recall": 0.25,
+          "f1": 0.4,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "semiconductor accelerators",
+          "relevant": [
+            "NVDA"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "NVDA"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "operating systems",
+          "relevant": [
+            "AAPL",
+            "GOOGL",
+            "MSFT"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "AAPL",
+            "GOOGL",
+            "MSFT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        }
+      ]
+    },
+    {
+      "prune_k": 6,
+      "summary": {
+        "queries": 40,
+        "scored": 40,
+        "errors": 0,
+        "macro_precision": 0.8442,
+        "macro_recall": 0.9229,
+        "macro_f1": 0.8563,
+        "mrr": 0.9125,
+        "exact_match_rate": 0.625,
+        "micro_precision": 0.7826,
+        "micro_recall": 0.8852,
+        "prune_k": 6,
+        "total_docs_evaluated": 341,
+        "total_possible_docs": 480,
+        "docs_pruned_ratio": 0.2896,
+        "fallback_queries": 24
+      },
+      "queries": [
+        {
+          "query": "cloud computing",
+          "relevant": [
+            "AMZN",
+            "GOOGL",
+            "MSFT"
+          ],
+          "error": null,
+          "candidates_sent": 5,
+          "fallback": false,
+          "matched": [
+            "AAPL",
+            "AMZN",
+            "GOOGL",
+            "MSFT",
+            "NVDA"
+          ],
+          "precision": 0.6,
+          "recall": 1.0,
+          "f1": 0.75,
+          "reciprocal_rank": 0.5,
+          "exact_match": false
+        },
+        {
+          "query": "enterprise software",
+          "relevant": [
+            "MSFT"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "MSFT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "AI chips",
+          "relevant": [
+            "NVDA"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "GOOGL",
+            "NVDA"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 0.5,
+          "exact_match": false
+        },
+        {
+          "query": "graphics processors",
+          "relevant": [
+            "NVDA"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "NVDA"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "online retail",
+          "relevant": [
+            "AMZN",
+            "WMT"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "AMZN",
+            "WMT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "e-commerce",
+          "relevant": [
+            "AMZN",
+            "WMT"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "AMZN",
+            "WMT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "social media advertising",
+          "relevant": [
+            "META"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "GOOGL",
+            "META"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 0.5,
+          "exact_match": false
+        },
+        {
+          "query": "digital advertising",
+          "relevant": [
+            "AMZN",
+            "GOOGL",
+            "META"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "GOOGL",
+            "META"
+          ],
+          "precision": 1.0,
+          "recall": 0.6667,
+          "f1": 0.8,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "search engine",
+          "relevant": [
+            "GOOGL"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "GOOGL",
+            "MSFT"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "investment banking",
+          "relevant": [
+            "JPM"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "JPM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "consumer banking",
+          "relevant": [
+            "JPM"
+          ],
+          "error": null,
+          "candidates_sent": 4,
+          "fallback": false,
+          "matched": [
+            "JPM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "credit cards",
+          "relevant": [
+            "JPM"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "JPM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "mortgage lending",
+          "relevant": [
+            "JPM"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "JPM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "pharmaceuticals",
+          "relevant": [
+            "JNJ"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "JNJ"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "medical devices",
+          "relevant": [
+            "JNJ"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "JNJ"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "consumer health products",
+          "relevant": [
+            "JNJ"
+          ],
+          "error": null,
+          "candidates_sent": 6,
+          "fallback": false,
+          "matched": [
+            "JNJ",
+            "PG"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "oil and gas",
+          "relevant": [
+            "XOM"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "XOM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "refining",
+          "relevant": [
+            "XOM"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "XOM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "household products",
+          "relevant": [
+            "PG",
+            "WMT"
+          ],
+          "error": null,
+          "candidates_sent": 6,
+          "fallback": false,
+          "matched": [
+            "PG"
+          ],
+          "precision": 1.0,
+          "recall": 0.5,
+          "f1": 0.6667,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "personal care",
+          "relevant": [
+            "PG"
+          ],
+          "error": null,
+          "candidates_sent": 3,
+          "fallback": false,
+          "matched": [
+            "PG"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "soft drinks",
+          "relevant": [
+            "KO"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "KO"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "bottled water",
+          "relevant": [
+            "KO"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "KO"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "grocery retail",
+          "relevant": [
+            "WMT"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "WMT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "discount stores",
+          "relevant": [
+            "WMT"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "WMT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "smartphones",
+          "relevant": [
+            "AAPL"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "AAPL",
+            "GOOGL"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "wearables",
+          "relevant": [
+            "AAPL"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "AAPL",
+            "META"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "personal computers",
+          "relevant": [
+            "AAPL"
+          ],
+          "error": null,
+          "candidates_sent": 3,
+          "fallback": false,
+          "matched": [
+            "AAPL",
+            "MSFT"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "streaming video",
+          "relevant": [
+            "AMZN",
+            "GOOGL"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "AAPL",
+            "GOOGL"
+          ],
+          "precision": 0.5,
+          "recall": 0.5,
+          "f1": 0.5,
+          "reciprocal_rank": 0.5,
+          "exact_match": false
+        },
+        {
+          "query": "data centers",
+          "relevant": [
+            "AMZN",
+            "GOOGL",
+            "MSFT",
+            "NVDA"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "AAPL",
+            "AMZN",
+            "GOOGL",
+            "META",
+            "MSFT",
+            "NVDA"
+          ],
+          "precision": 0.6667,
+          "recall": 1.0,
+          "f1": 0.8,
+          "reciprocal_rank": 0.5,
+          "exact_match": false
+        },
+        {
+          "query": "virtual reality",
+          "relevant": [
+            "META"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "META"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "digital payments",
+          "relevant": [
+            "JPM"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "GOOGL",
+            "META"
+          ],
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_match": false
+        },
+        {
+          "query": "asset management",
+          "relevant": [
+            "JPM"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "JPM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "low-carbon energy",
+          "relevant": [
+            "XOM"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "XOM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "paper products",
+          "relevant": [
+            "PG"
+          ],
+          "error": null,
+          "candidates_sent": 6,
+          "fallback": false,
+          "matched": [
+            "PG",
+            "WMT"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "juice and beverages",
+          "relevant": [
+            "KO"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "KO"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "warehouse clubs",
+          "relevant": [
+            "WMT"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "WMT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "technology mega-caps",
+          "relevant": [
+            "AAPL",
+            "AMZN",
+            "GOOGL",
+            "META",
+            "MSFT",
+            "NVDA"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "AAPL",
+            "AMZN",
+            "GOOGL",
+            "META",
+            "MSFT",
+            "NVDA"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "consumer staples",
+          "relevant": [
+            "JNJ",
+            "KO",
+            "PG",
+            "WMT"
+          ],
+          "error": null,
+          "candidates_sent": 4,
+          "fallback": false,
+          "matched": [
+            "WMT"
+          ],
+          "precision": 1.0,
+          "recall": 0.25,
+          "f1": 0.4,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "semiconductor accelerators",
+          "relevant": [
+            "NVDA"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "NVDA"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "operating systems",
+          "relevant": [
+            "AAPL",
+            "GOOGL",
+            "MSFT"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "AAPL",
+            "GOOGL",
+            "MSFT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        }
+      ]
+    },
+    {
+      "prune_k": 8,
+      "summary": {
+        "queries": 40,
+        "scored": 40,
+        "errors": 0,
+        "macro_precision": 0.8442,
+        "macro_recall": 0.9229,
+        "macro_f1": 0.8563,
+        "mrr": 0.9125,
+        "exact_match_rate": 0.625,
+        "micro_precision": 0.7826,
+        "micro_recall": 0.8852,
+        "prune_k": 8,
+        "total_docs_evaluated": 343,
+        "total_possible_docs": 480,
+        "docs_pruned_ratio": 0.2854,
+        "fallback_queries": 24
+      },
+      "queries": [
+        {
+          "query": "cloud computing",
+          "relevant": [
+            "AMZN",
+            "GOOGL",
+            "MSFT"
+          ],
+          "error": null,
+          "candidates_sent": 5,
+          "fallback": false,
+          "matched": [
+            "AAPL",
+            "AMZN",
+            "GOOGL",
+            "MSFT",
+            "NVDA"
+          ],
+          "precision": 0.6,
+          "recall": 1.0,
+          "f1": 0.75,
+          "reciprocal_rank": 0.5,
+          "exact_match": false
+        },
+        {
+          "query": "enterprise software",
+          "relevant": [
+            "MSFT"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "MSFT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "AI chips",
+          "relevant": [
+            "NVDA"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "GOOGL",
+            "NVDA"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 0.5,
+          "exact_match": false
+        },
+        {
+          "query": "graphics processors",
+          "relevant": [
+            "NVDA"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "NVDA"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "online retail",
+          "relevant": [
+            "AMZN",
+            "WMT"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "AMZN",
+            "WMT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "e-commerce",
+          "relevant": [
+            "AMZN",
+            "WMT"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "AMZN",
+            "WMT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "social media advertising",
+          "relevant": [
+            "META"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "GOOGL",
+            "META"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 0.5,
+          "exact_match": false
+        },
+        {
+          "query": "digital advertising",
+          "relevant": [
+            "AMZN",
+            "GOOGL",
+            "META"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "GOOGL",
+            "META"
+          ],
+          "precision": 1.0,
+          "recall": 0.6667,
+          "f1": 0.8,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "search engine",
+          "relevant": [
+            "GOOGL"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "GOOGL",
+            "MSFT"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "investment banking",
+          "relevant": [
+            "JPM"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "JPM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "consumer banking",
+          "relevant": [
+            "JPM"
+          ],
+          "error": null,
+          "candidates_sent": 4,
+          "fallback": false,
+          "matched": [
+            "JPM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "credit cards",
+          "relevant": [
+            "JPM"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "JPM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "mortgage lending",
+          "relevant": [
+            "JPM"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "JPM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "pharmaceuticals",
+          "relevant": [
+            "JNJ"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "JNJ"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "medical devices",
+          "relevant": [
+            "JNJ"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "JNJ"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "consumer health products",
+          "relevant": [
+            "JNJ"
+          ],
+          "error": null,
+          "candidates_sent": 8,
+          "fallback": false,
+          "matched": [
+            "JNJ",
+            "PG"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "oil and gas",
+          "relevant": [
+            "XOM"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "XOM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "refining",
+          "relevant": [
+            "XOM"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "XOM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "household products",
+          "relevant": [
+            "PG",
+            "WMT"
+          ],
+          "error": null,
+          "candidates_sent": 6,
+          "fallback": false,
+          "matched": [
+            "PG"
+          ],
+          "precision": 1.0,
+          "recall": 0.5,
+          "f1": 0.6667,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "personal care",
+          "relevant": [
+            "PG"
+          ],
+          "error": null,
+          "candidates_sent": 3,
+          "fallback": false,
+          "matched": [
+            "PG"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "soft drinks",
+          "relevant": [
+            "KO"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "KO"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "bottled water",
+          "relevant": [
+            "KO"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "KO"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "grocery retail",
+          "relevant": [
+            "WMT"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "WMT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "discount stores",
+          "relevant": [
+            "WMT"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "WMT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "smartphones",
+          "relevant": [
+            "AAPL"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "AAPL",
+            "GOOGL"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "wearables",
+          "relevant": [
+            "AAPL"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "AAPL",
+            "META"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "personal computers",
+          "relevant": [
+            "AAPL"
+          ],
+          "error": null,
+          "candidates_sent": 3,
+          "fallback": false,
+          "matched": [
+            "AAPL",
+            "MSFT"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "streaming video",
+          "relevant": [
+            "AMZN",
+            "GOOGL"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "AAPL",
+            "GOOGL"
+          ],
+          "precision": 0.5,
+          "recall": 0.5,
+          "f1": 0.5,
+          "reciprocal_rank": 0.5,
+          "exact_match": false
+        },
+        {
+          "query": "data centers",
+          "relevant": [
+            "AMZN",
+            "GOOGL",
+            "MSFT",
+            "NVDA"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "AAPL",
+            "AMZN",
+            "GOOGL",
+            "META",
+            "MSFT",
+            "NVDA"
+          ],
+          "precision": 0.6667,
+          "recall": 1.0,
+          "f1": 0.8,
+          "reciprocal_rank": 0.5,
+          "exact_match": false
+        },
+        {
+          "query": "virtual reality",
+          "relevant": [
+            "META"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "META"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "digital payments",
+          "relevant": [
+            "JPM"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "GOOGL",
+            "META"
+          ],
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_match": false
+        },
+        {
+          "query": "asset management",
+          "relevant": [
+            "JPM"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "JPM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "low-carbon energy",
+          "relevant": [
+            "XOM"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "XOM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "paper products",
+          "relevant": [
+            "PG"
+          ],
+          "error": null,
+          "candidates_sent": 6,
+          "fallback": false,
+          "matched": [
+            "PG",
+            "WMT"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "juice and beverages",
+          "relevant": [
+            "KO"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "KO"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "warehouse clubs",
+          "relevant": [
+            "WMT"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "WMT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "technology mega-caps",
+          "relevant": [
+            "AAPL",
+            "AMZN",
+            "GOOGL",
+            "META",
+            "MSFT",
+            "NVDA"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "AAPL",
+            "AMZN",
+            "GOOGL",
+            "META",
+            "MSFT",
+            "NVDA"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "consumer staples",
+          "relevant": [
+            "JNJ",
+            "KO",
+            "PG",
+            "WMT"
+          ],
+          "error": null,
+          "candidates_sent": 4,
+          "fallback": false,
+          "matched": [
+            "WMT"
+          ],
+          "precision": 1.0,
+          "recall": 0.25,
+          "f1": 0.4,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "semiconductor accelerators",
+          "relevant": [
+            "NVDA"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "NVDA"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "operating systems",
+          "relevant": [
+            "AAPL",
+            "GOOGL",
+            "MSFT"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "AAPL",
+            "GOOGL",
+            "MSFT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        }
+      ]
+    },
+    {
+      "prune_k": 12,
+      "summary": {
+        "queries": 40,
+        "scored": 40,
+        "errors": 0,
+        "macro_precision": 0.8442,
+        "macro_recall": 0.9229,
+        "macro_f1": 0.8563,
+        "mrr": 0.9125,
+        "exact_match_rate": 0.625,
+        "micro_precision": 0.7826,
+        "micro_recall": 0.8852,
+        "prune_k": 12,
+        "total_docs_evaluated": 343,
+        "total_possible_docs": 480,
+        "docs_pruned_ratio": 0.2854,
+        "fallback_queries": 24
+      },
+      "queries": [
+        {
+          "query": "cloud computing",
+          "relevant": [
+            "AMZN",
+            "GOOGL",
+            "MSFT"
+          ],
+          "error": null,
+          "candidates_sent": 5,
+          "fallback": false,
+          "matched": [
+            "AAPL",
+            "AMZN",
+            "GOOGL",
+            "MSFT",
+            "NVDA"
+          ],
+          "precision": 0.6,
+          "recall": 1.0,
+          "f1": 0.75,
+          "reciprocal_rank": 0.5,
+          "exact_match": false
+        },
+        {
+          "query": "enterprise software",
+          "relevant": [
+            "MSFT"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "MSFT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "AI chips",
+          "relevant": [
+            "NVDA"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "GOOGL",
+            "NVDA"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 0.5,
+          "exact_match": false
+        },
+        {
+          "query": "graphics processors",
+          "relevant": [
+            "NVDA"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "NVDA"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "online retail",
+          "relevant": [
+            "AMZN",
+            "WMT"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "AMZN",
+            "WMT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "e-commerce",
+          "relevant": [
+            "AMZN",
+            "WMT"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "AMZN",
+            "WMT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "social media advertising",
+          "relevant": [
+            "META"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "GOOGL",
+            "META"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 0.5,
+          "exact_match": false
+        },
+        {
+          "query": "digital advertising",
+          "relevant": [
+            "AMZN",
+            "GOOGL",
+            "META"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "GOOGL",
+            "META"
+          ],
+          "precision": 1.0,
+          "recall": 0.6667,
+          "f1": 0.8,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "search engine",
+          "relevant": [
+            "GOOGL"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "GOOGL",
+            "MSFT"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "investment banking",
+          "relevant": [
+            "JPM"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "JPM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "consumer banking",
+          "relevant": [
+            "JPM"
+          ],
+          "error": null,
+          "candidates_sent": 4,
+          "fallback": false,
+          "matched": [
+            "JPM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "credit cards",
+          "relevant": [
+            "JPM"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "JPM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "mortgage lending",
+          "relevant": [
+            "JPM"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "JPM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "pharmaceuticals",
+          "relevant": [
+            "JNJ"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "JNJ"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "medical devices",
+          "relevant": [
+            "JNJ"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "JNJ"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "consumer health products",
+          "relevant": [
+            "JNJ"
+          ],
+          "error": null,
+          "candidates_sent": 8,
+          "fallback": false,
+          "matched": [
+            "JNJ",
+            "PG"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "oil and gas",
+          "relevant": [
+            "XOM"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "XOM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "refining",
+          "relevant": [
+            "XOM"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "XOM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "household products",
+          "relevant": [
+            "PG",
+            "WMT"
+          ],
+          "error": null,
+          "candidates_sent": 6,
+          "fallback": false,
+          "matched": [
+            "PG"
+          ],
+          "precision": 1.0,
+          "recall": 0.5,
+          "f1": 0.6667,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "personal care",
+          "relevant": [
+            "PG"
+          ],
+          "error": null,
+          "candidates_sent": 3,
+          "fallback": false,
+          "matched": [
+            "PG"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "soft drinks",
+          "relevant": [
+            "KO"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "KO"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "bottled water",
+          "relevant": [
+            "KO"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "KO"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "grocery retail",
+          "relevant": [
+            "WMT"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "WMT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "discount stores",
+          "relevant": [
+            "WMT"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "WMT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "smartphones",
+          "relevant": [
+            "AAPL"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "AAPL",
+            "GOOGL"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "wearables",
+          "relevant": [
+            "AAPL"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "AAPL",
+            "META"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "personal computers",
+          "relevant": [
+            "AAPL"
+          ],
+          "error": null,
+          "candidates_sent": 3,
+          "fallback": false,
+          "matched": [
+            "AAPL",
+            "MSFT"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "streaming video",
+          "relevant": [
+            "AMZN",
+            "GOOGL"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "AAPL",
+            "GOOGL"
+          ],
+          "precision": 0.5,
+          "recall": 0.5,
+          "f1": 0.5,
+          "reciprocal_rank": 0.5,
+          "exact_match": false
+        },
+        {
+          "query": "data centers",
+          "relevant": [
+            "AMZN",
+            "GOOGL",
+            "MSFT",
+            "NVDA"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "AAPL",
+            "AMZN",
+            "GOOGL",
+            "META",
+            "MSFT",
+            "NVDA"
+          ],
+          "precision": 0.6667,
+          "recall": 1.0,
+          "f1": 0.8,
+          "reciprocal_rank": 0.5,
+          "exact_match": false
+        },
+        {
+          "query": "virtual reality",
+          "relevant": [
+            "META"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "META"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "digital payments",
+          "relevant": [
+            "JPM"
+          ],
+          "error": null,
+          "candidates_sent": 2,
+          "fallback": false,
+          "matched": [
+            "GOOGL",
+            "META"
+          ],
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_match": false
+        },
+        {
+          "query": "asset management",
+          "relevant": [
+            "JPM"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "JPM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "low-carbon energy",
+          "relevant": [
+            "XOM"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "XOM"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "paper products",
+          "relevant": [
+            "PG"
+          ],
+          "error": null,
+          "candidates_sent": 6,
+          "fallback": false,
+          "matched": [
+            "PG",
+            "WMT"
+          ],
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "juice and beverages",
+          "relevant": [
+            "KO"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "KO"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "warehouse clubs",
+          "relevant": [
+            "WMT"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "WMT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "technology mega-caps",
+          "relevant": [
+            "AAPL",
+            "AMZN",
+            "GOOGL",
+            "META",
+            "MSFT",
+            "NVDA"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "AAPL",
+            "AMZN",
+            "GOOGL",
+            "META",
+            "MSFT",
+            "NVDA"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "consumer staples",
+          "relevant": [
+            "JNJ",
+            "KO",
+            "PG",
+            "WMT"
+          ],
+          "error": null,
+          "candidates_sent": 4,
+          "fallback": false,
+          "matched": [
+            "WMT"
+          ],
+          "precision": 1.0,
+          "recall": 0.25,
+          "f1": 0.4,
+          "reciprocal_rank": 1.0,
+          "exact_match": false
+        },
+        {
+          "query": "semiconductor accelerators",
+          "relevant": [
+            "NVDA"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "NVDA"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        },
+        {
+          "query": "operating systems",
+          "relevant": [
+            "AAPL",
+            "GOOGL",
+            "MSFT"
+          ],
+          "error": null,
+          "candidates_sent": 12,
+          "fallback": true,
+          "matched": [
+            "AAPL",
+            "GOOGL",
+            "MSFT"
+          ],
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_match": true
+        }
+      ]
+    }
+  ]
+}

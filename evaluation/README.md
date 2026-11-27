@@ -13,6 +13,7 @@ python evaluation/evaluate.py --mode keyword --operator all
 python evaluation/evaluate.py --mode keyword --operator any
 python evaluation/evaluate.py --mode jevdb
 python evaluation/evaluate.py --mode both
+python evaluation/evaluate.py --mode prune_ablation
 ```
 
 默认使用 `evaluation/documents.csv` 和 `evaluation/labels.csv`。要评估真实数据：
@@ -23,15 +24,18 @@ python evaluation/evaluate.py --documents data/documents.csv --labels evaluation
 
 前提是 `data/documents.csv` 中至少包含这 12 个代码；相关性标签按代码匹配，不依赖文档原文。
 
-## 结果（2026-11-25）
+## 结果（2026-11-25 / 2026-11-27 更新）
 
-| 模式 | 宏 P | 宏 R | 宏 F1 | MRR | 精确匹配 |
-|---|---:|---:|---:|---:|---:|
-| 关键词 AND + BM25 | 0.850 | 0.769 | 0.793 | 0.850 | 0.700 |
-| 关键词 OR + BM25 | 0.729 | 0.844 | 0.730 | 0.925 | 0.500 |
-| JEVDB（DeepSeek 兼容端点） | 0.826 | 0.969 | 0.865 | 0.906 | 0.600 |
+| 模式 | 评估文档数 | 剪枝比例 | 宏 P | 宏 R | 宏 F1 | MRR | 精确匹配 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 关键词 AND + BM25（全语料 IDF） | 480 | — | 0.850 | 0.769 | 0.792 | 0.850 | 0.700 |
+| 关键词 OR + BM25（全语料 IDF） | 480 | — | 0.729 | 0.844 | 0.730 | 0.925 | 0.500 |
+| JEVDB 全量（DeepSeek 兼容端点） | 480/480 | 0.0% | 0.826 | 0.969 | 0.865 | 0.906 | 0.600 |
+| Prune-First + JEVDB (`prune_k=3`) | 328/480 | 31.7% | 0.854 | 0.923 | 0.863 | — | 0.650 |
+| Prune-First + JEVDB (`prune_k=4`) | 334/480 | 30.4% | 0.848 | 0.923 | 0.859 | — | 0.625 |
+| Prune-First + JEVDB (`prune_k=6`) | 341/480 | 29.0% | 0.844 | 0.923 | 0.856 | — | 0.625 |
 
-JEVDB 结果来自 DeepSeek 兼容端点加本机协议适配层（`scripts/jev_llm_proxy.py`），不是 Typesafe 原生服务；详见 `docs/verification/jevdb-smoke-2026-11-25.md` 和 `results/both-deepseek.json`。
+JEVDB 结果来自 DeepSeek 兼容端点加本机协议适配层（`scripts/jev_llm_proxy.py`），不是 Typesafe 原生服务；`prune_ablation` 为基于 `both-deepseek.json` 的精确重放消融（详见 `results/prune-ablation.json` 与 `docs/verification/jevdb-smoke-2026-11-25.md`）。
 
 ## 注意
 
