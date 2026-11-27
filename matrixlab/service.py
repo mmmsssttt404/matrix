@@ -30,7 +30,10 @@ def make_server(host, port, settings=None, token=None):
             self.wfile.write(raw)
 
         def authorized(self):
-            return hmac.compare_digest(self.headers.get("Authorization", ""), "Bearer " + token)
+            return hmac.compare_digest(
+                self.headers.get("Authorization", "").encode("utf-8"),
+                ("Bearer " + token).encode("utf-8"),
+            )
 
         def do_GET(self):
             if not self.authorized():
@@ -51,14 +54,19 @@ def make_server(host, port, settings=None, token=None):
                 body = json.loads(self.rfile.read(length))
                 if not isinstance(body["documents"], list) or len(body["documents"]) > 200:
                     raise DataError("最多200条资料。")
+                if not isinstance(body["query"], str):
+                    raise DataError("筛选条件须为文本。")
+                max_docs = body.get("max_documents", 100)
+                if type(max_docs) is not int:
+                    raise DataError("max_documents须为整数。")
                 docs = validate_documents(pd.DataFrame(body["documents"]))
                 run = screen(
                     docs,
-                    str(body["query"]),
+                    body["query"],
                     body["asof"],
                     settings,
                     "jevdb",
-                    int(body.get("max_documents", 100)),
+                    max_docs,
                     str(body.get("operator", "all")),
                     jev_op=str(body.get("jev_op", "holds")),
                     threshold=float(body.get("threshold", 0.5)),

@@ -212,10 +212,12 @@ def inspect_backend():
 
 def screen(documents, query, asof, settings, mode="keyword", max_documents=100, operator="all",
            jev_op="holds", threshold=0.5, choices=None, prune_k=None):
+    if not isinstance(query, str):
+        raise DataError("筛选条件须为文本。")
     query = query.strip()
     if not query or len(query) > 1000:
         raise DataError("筛选条件须为1—1000字符。")
-    if not 1 <= max_documents <= 200:
+    if type(max_documents) is not int or not 1 <= max_documents <= 200:
         raise DataError("每次最多处理1—200条资料。")
     if operator not in {"all", "any"}:
         raise DataError("关键词匹配方式须为all或any。")
@@ -381,10 +383,32 @@ def _remote_screen(eligible, query, asof, settings, limit, operator="all",
             payload = json.load(response)
         run = ResearchRun(**payload)
         UUID(run.run_id)
-        if run.query != query or run.asof != body["asof"] or not run.backend.startswith("jevdb_"):
+        if (run.query != query or run.asof != body["asof"]
+                or not run.backend.startswith("jevdb_")
+                or run.operator != operator or type(run.inputs) is not int
+                or not 0 <= run.inputs <= len(eligible)):
             raise ValueError("Mismatched research response")
-        if not {r["doc_id"] for r in run.matches} <= set(eligible.doc_id):
-            raise ValueError("Unknown evidence returned by service")
+        if (not isinstance(run.matches, list) or not isinstance(run.stats, list)
+                or not isinstance(run.elapsed_seconds, (int, float))
+                or not math.isfinite(run.elapsed_seconds) or run.elapsed_seconds < 0):
+            raise ValueError("Invalid research response")
+        created = pd.Timestamp(run.created_at)
+        if pd.isna(created) or created.tzinfo is None:
+            raise ValueError("Invalid response timestamp")
+        # Verify full evidence provenance so remote service cannot alter source, symbol, text, or timestamps.
+        originals = {row["doc_id"]: row for row in body["documents"]}
+        seen = set()
+        for row in run.matches:
+            doc_id = row["doc_id"]
+            if doc_id not in originals or doc_id in seen:
+                raise ValueError("Unknown or duplicate evidence returned by service")
+            seen.add(doc_id)
+            for column in DOC_COLUMNS:
+                actual, expected = row[column], originals[doc_id][column]
+                if column in {"available_at", "retrieved_at"}:
+                    actual, expected = pd.Timestamp(actual), pd.Timestamp(expected)
+                if actual != expected:
+                    raise ValueError("Modified evidence returned by service")
         return run
     except Exception as exc:
         raise ResearchUnavailable("语义服务请求失败，请检查地址、令牌及服务端模型配置。没有返回替代语义结果。") from exc

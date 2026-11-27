@@ -229,13 +229,15 @@ def holdout_curve(prices, weights, signal_date, end_date=None, cost_bps=15):
     """Buy once at the next session's adjusted open; then hold drifting weights."""
     if not np.isfinite(cost_bps) or not 0 <= cost_bps < 10000:
         raise DataError("成本须为0—10000bp之间的有限数。")
-    if (weights < 0).any() or not np.isclose(weights.sum(), 1):
-        raise DataError("权重须非负且和为1。")
+    if not weights.index.is_unique or not np.isfinite(weights).all() or (weights < 0).any() or not np.isclose(weights.sum(), 1):
+        raise DataError("权重须对应唯一股票、非负、有限且和为1。")
     end = pd.Timestamp(end_date) if end_date is not None else prices.date.max()
-    future = prices.loc[(prices.date > pd.Timestamp(signal_date)) & (prices.date <= end) & prices.symbol.isin(weights.index)]
-    calendar = sorted(future.date.unique())
+    # Extract the market calendar before filtering to holdings so missing every held symbol on a session fails explicitly.
+    future_all = prices.loc[(prices.date > pd.Timestamp(signal_date)) & (prices.date <= end)]
+    calendar = sorted(future_all.date.unique())
     if not calendar:
         raise DataError("研究日之后没有可供样本外检验的行情。")
+    future = future_all.loc[future_all.symbol.isin(weights.index)]
     first = pd.Timestamp(calendar[0])
     entry = future.loc[future.date.eq(first)].set_index("symbol").reindex(weights.index)
     if entry.open.isna().any():
@@ -260,10 +262,11 @@ def rolling_holdout_curve(prices, symbols, signal_date, end_date=None, lookback=
     if len(symbols) < 2 or rebalance_every < 5 or not 0 <= cost_bps < 10000:
         raise DataError("滚动回测至少需要两只股票，调仓周期不少于5个交易日，成本须为0—10000bp。")
     end = pd.Timestamp(end_date) if end_date is not None else prices.date.max()
-    future = prices.loc[(prices.date > pd.Timestamp(signal_date)) & (prices.date <= end) & prices.symbol.isin(symbols)]
-    calendar = sorted(future.date.unique())
+    future_all = prices.loc[(prices.date > pd.Timestamp(signal_date)) & (prices.date <= end)]
+    calendar = sorted(future_all.date.unique())
     if not calendar:
         raise DataError("研究日之后没有可供样本外滚动回测的行情。")
+    future = future_all.loc[future_all.symbol.isin(symbols)]
     opens = future.pivot(index="date", columns="symbol", values="open").reindex(index=calendar, columns=symbols)
     closes = future.pivot(index="date", columns="symbol", values="close").reindex(index=calendar, columns=symbols)
     if opens.isna().any().any() or closes.isna().any().any():
@@ -324,7 +327,7 @@ def performance(curve):
     growth = curve.iloc[-1] / curve.iloc[0] - 1
     periods = len(curve) - 1
     annual = growth.apply(lambda value: (1 + value) ** (252 / periods) - 1 if 1 + value > 0 else np.nan)
-    daily = curve.pct_change().dropna(how="all")
+    daily = curve.pct_change(fill_method=None).dropna(how="all")
     volatility = daily.std(ddof=1) * np.sqrt(252)
     sharpe = annual / volatility.replace(0, np.nan)
     return pd.DataFrame({"累计收益": growth, "最大回撤": drawdown.min(),

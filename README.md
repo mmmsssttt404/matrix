@@ -27,7 +27,8 @@
 - [项目总报告：架构、矩阵方法、JEVDB 实证与双题联动](docs/report.md)
 - [工具与开源 Skills 调研、职责、权限与许可审计](docs/tools.md)
 - [运行说明与完整演示步骤](docs/runbook.md)
-- [5 位成员个人录屏自述提词脚本与分镜手册](docs/presentation-scripts.md)
+- [5 位成员个人贡献与重点修改自述（文字版）](docs/member-self-statements.md)
+- [5 位成员可选演示提词与分镜手册](docs/presentation-scripts.md)
 - [Windows 桌面版使用说明](docs/windows.md) · [桌面排布与参考来源](docs/desktop-design.md)
 - [JEVDB 本机验证记录（2026-11-25）](docs/verification/jevdb-smoke-2026-11-25.md)
 - [Multi-Agent 交叉核验报告（2026-11-27）](docs/verification/multi-agent-audit-2026-11-27.md)
@@ -55,7 +56,7 @@ QT_QPA_PLATFORM=offscreen PYQTGRAPH_QT_LIB=PySide6 .venv/bin/python -m pytest -q
 .venv/bin/python manuscript/verify_manuscript_math.py
 ```
 
-**Windows 便携版**：[v0.3.0 便携包](https://github.com/mmmsssttt404/matrix/releases/download/v0.3.0/MatrixWorkbench-Windows-x64-v0.3.0.zip) · [Releases 版本页](https://github.com/mmmsssttt404/matrix/releases/latest)（完整解压后双击 `MatrixWorkbench.exe`，保留同目录 `_internal` 文件夹，无需安装 Python）。
+**Windows 便携版**：[v0.4.0 便携包](https://github.com/mmmsssttt404/matrix/releases/download/v0.4.0/MatrixWorkbench-Windows-x64-v0.4.0.zip) · [Releases 版本页](https://github.com/mmmsssttt404/matrix/releases/latest)（完整解压后双击 `MatrixWorkbench.exe`，保留同目录 `_internal` 文件夹，无需安装 Python；源码用户可直接运行 `.\scripts\start-windows.ps1`）。
 
 ![原生股票工作台](docs/images/desktop-workbench.png)
 

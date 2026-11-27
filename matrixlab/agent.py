@@ -2,9 +2,11 @@
 with Human-in-the-Loop risk tiers aligned with Matrix Analysis Lec0."""
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
+from html import escape
 import json
+import math
 from pathlib import Path
 import time
 from uuid import uuid4
@@ -48,6 +50,7 @@ class AgentTrace:
     diagnostics: dict
     proposed_orders: list
     fills: list
+    matched_documents: list = field(default_factory=list)
 
     def save(self, directory):
         directory = Path(directory)
@@ -55,6 +58,144 @@ class AgentTrace:
         path = directory / f"agent-trace-{self.trace_id}.json"
         path.write_text(json.dumps(asdict(self), ensure_ascii=False, indent=2, default=str), encoding="utf-8")
         return path
+
+    def export_html_report(self, directory):
+        """Render a self-contained, offline-readable HTML audit report with local evidence."""
+        directory = Path(directory)
+        directory.mkdir(parents=True, exist_ok=True)
+        (directory / "trace.json").write_text(
+            json.dumps(asdict(self), ensure_ascii=False, indent=2, default=str), encoding="utf-8"
+        )
+
+        def html_table(rows):
+            if not rows:
+                return "<p class='muted'>无记录</p>"
+            return pd.DataFrame(rows).to_html(index=False, escape=True, border=0)
+
+        status_zh = {
+            "completed": "已完成",
+            "awaiting_confirmation": "待人工确认",
+            "blocked_pending_human_approval": "已拦截（等待人工显式审批）",
+            "executed": "已人工批准并原子成交",
+        }
+        strat_zh = "风险平价（Spinu 凸 ERC）" if self.strategy == "erc" else "只做多最小方差（QP）"
+        step_rows = [
+            {
+                "步骤": s["step"],
+                "架构层级": s["layer"],
+                "Skill": s["skill"],
+                "动作": s["action"],
+                "风险等级": s["risk_tier"],
+                "状态": status_zh.get(s["status"], s["status"]),
+                "耗时(s)": f"{s['elapsed_seconds']:.4f}",
+            }
+            for s in self.steps
+        ]
+        ev_rows = [
+            {
+                "公司": d.get("symbol", ""),
+                "资料标题": d.get("title", ""),
+                "可用时间": str(d.get("available_at", "")),
+                "来源链接": d.get("source_url", ""),
+            }
+            for d in self.matched_documents
+        ]
+        diag = self.diagnostics or {}
+        qp_w = diag.get("weights", {})
+        erc_w = diag.get("erc_weights", {})
+        tgt_w = diag.get("target_weights", qp_w)
+        weight_rows = [
+            {
+                "股票": sym,
+                "最小方差(QP)": f"{qp_w.get(sym, 0.0):.2%}",
+                "风险平价(ERC)": f"{erc_w.get(sym, 0.0):.2%}",
+                "本次执行目标权重": f"{tgt_w.get(sym, 0.0):.2%}",
+            }
+            for sym in self.selected_symbols
+        ]
+        order_rows = [
+            {
+                "股票": o["symbol"],
+                "方向": "买入" if o["side"] == "BUY" else "卖出",
+                "模拟份额": o["quantity"],
+            }
+            for o in self.proposed_orders
+        ]
+        fill_rows = [
+            {
+                "成交日期": f["fill_date"],
+                "股票": f["symbol"],
+                "方向": "买入" if f["side"] == "BUY" else "卖出",
+                "模拟份额": f["quantity"],
+                "含滑点成交价(USD)": f"{f['price']:.4f}",
+                "手续费(USD)": f"{f['fee']:.2f}",
+                "成交金额(USD)": f"{f['notional']:.4f}",
+            }
+            for f in self.fills
+        ]
+        holdout_rows = []
+        hp = diag.get("holdout_performance")
+        if isinstance(hp, dict) and hp:
+            # hp is column -> {strategy: value}
+            strats = list(next(iter(hp.values())).keys())
+            for st in strats:
+                row = {"策略": st}
+                for metric, vals in hp.items():
+                    v = vals.get(st)
+                    if v is None or (isinstance(v, float) and not math.isfinite(v)):
+                        row[metric] = "—"
+                    elif metric == "夏普比率":
+                        row[metric] = f"{v:.3f}"
+                    else:
+                        row[metric] = f"{v:.2%}"
+                holdout_rows.append(row)
+
+        kkt_val = diag.get("kkt_complementarity_error")
+        kkt_str = f"{kkt_val:.2e}" if isinstance(kkt_val, (int, float)) else "—"
+        approval_banner = (
+            "已获人工显式批准（HIGH_EXPLICIT_APPROVAL），按所见即所得清单完成 SQLite 原子撮合。"
+            if self.approved_execution
+            else "当前为只读预览报告（未写入 paper.sqlite3 账本）；需在桌面端点击“人工批准并执行撮合”或 CLI 传 --approve 方可执行。"
+        )
+        html_doc = f"""<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Matrix Workbench · 四层 Agent 审计与演示报告</title>
+<style>
+body{{font:15px/1.7 system-ui,'PingFang SC','Microsoft YaHei',sans-serif;color:#1e293b;background:#f1f5f9;margin:0}}
+main{{max-width:1080px;margin:28px auto;background:#fff;padding:32px;border-radius:12px;box-shadow:0 2px 12px rgba(15,23,42,.06)}}
+h1{{font-size:24px;color:#0f172a;border-bottom:2px solid #2563eb;padding-bottom:8px;margin-top:0}}
+h2{{font-size:18px;margin-top:28px;color:#1e3a8a}}
+.muted{{color:#64748b}}.box{{background:#f8fafc;border-left:4px solid #2563eb;padding:10px 14px;border-radius:4px;margin:12px 0}}
+.scroll{{overflow-x:auto}}table{{border-collapse:collapse;width:100%;font-size:13px;margin:8px 0}}
+th,td{{text-align:left;padding:8px 10px;border-bottom:1px solid #e2e8f0;overflow-wrap:anywhere;max-width:380px}}
+th{{background:#eff6ff;color:#1e3a8a}}@media print{{body{{background:#fff}}main{{margin:0;box-shadow:none;padding:0}}}}
+</style></head><body><main>
+<p class="muted">MATRIX WORKBENCH · 中国科学院大学《矩阵分析与应用》课程大作业可复查演示报告</p>
+<h1>用户需求 → 四层 Agent 工具调用 → 矩阵风控 → 模拟订单</h1>
+<div class="box">
+<b>研究条件：</b>{escape(self.user_query)}<br>
+<b>研究日期 (asof)：</b>{escape(self.asof)} · <b>检索模式：</b>{escape(self.mode)} ({escape(self.jev_op)}) · <b>组合策略：</b>{escape(strat_zh)}<br>
+<b>Trace ID：</b>{escape(self.trace_id)} · <b>生成时间 (UTC)：</b>{escape(self.created_at)}
+</div>
+<p class="muted">{escape(approval_banner)}</p>
+<h2>1. 四层 Agent 执行轨迹与风险分级门控</h2>
+<div class="scroll">{html_table(step_rows)}</div>
+<h2>2. 防穿越筛选依据（仅评估 available_at &lt; 研究日美东日末）</h2>
+<div class="scroll">{html_table(ev_rows)}</div>
+<h2>3. 矩阵协方差收缩、KKT 残差与权重对照</h2>
+<p>有效共同收益率样本：<b>{diag.get('observations', '—')}</b> · 实际收缩系数 α：<b>{diag.get('alpha_used', '—')}</b>（Ledoit-Wolf 最优 α* = <b>{diag.get('ledoit_wolf_alpha', '—')}</b>）· 条件数：<b>{diag.get('condition_before', '—')} → {diag.get('condition_after', '—')}</b> · KKT 互补残差：<b>{kkt_str}</b> · PC1 解释方差：<b>{diag.get('pc1_explained', 0):.2%}</b></p>
+<div class="scroll">{html_table(weight_rows)}</div>
+<h2>4. 样本外表现对照（仅诊断展示，不参与权重拟合）</h2>
+<div class="scroll">{html_table(holdout_rows) if holdout_rows else "<p class='muted'>本次运行未启用样本外对比（可通过 include_holdout=True 开启）。</p>"}</div>
+<h2>5. 模拟调仓提案与原子成交明细</h2>
+<div class="scroll">{html_table(order_rows)}</div>
+<h3>实际成交记录（次日复权开盘价撮合，先卖后买）</h3>
+<div class="scroll">{html_table(fill_rows)}</div>
+<p class="muted">本报告完全离线自包含，不载入任何外部脚本，亦不导出 API 密钥或访问令牌；完整结构化记录保存在同目录 <a href="trace.json">trace.json</a>。</p>
+</main></body></html>"""
+        out_path = directory / "report.html"
+        out_path.write_text(html_doc, encoding="utf-8")
+        return out_path
 
 
 def run_workflow(
@@ -221,4 +362,8 @@ def run_workflow(
         diagnostics=diagnostics,
         proposed_orders=proposed,
         fills=fills,
+        matched_documents=[
+            {k: row.get(k) for k in ("doc_id", "symbol", "title", "available_at", "source_url", "match_score")}
+            for row in research_run.matches
+        ],
     )

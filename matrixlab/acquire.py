@@ -10,7 +10,7 @@ from zoneinfo import ZoneInfo
 
 import pandas as pd
 
-from .data import DOC_COLUMNS, PRICE_BASIS, DataError, validate_documents, validate_prices
+from .data import DOC_COLUMNS, PRICE_BASIS, DataError, cutoff_utc, validate_documents, validate_prices
 
 DEFAULT_SYMBOLS = ["AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "JPM", "JNJ", "XOM", "PG", "KO", "WMT"]
 WIKI_TITLES = dict(zip(DEFAULT_SYMBOLS, ["Apple Inc.", "Microsoft", "Nvidia", "Amazon (company)",
@@ -81,7 +81,7 @@ def fetch_dataset(directory, symbols=None, start="2021-01-01", end=None, profile
 
     if (directory / "paper.sqlite3").exists() and Broker(directory / "paper.sqlite3").exists():
         raise DataError("本工作区已有模拟账本，请在新的MATRIX_DATA_DIR中下载，避免修改账本的价格基准。")
-    symbols = [s.upper() for s in (symbols or DEFAULT_SYMBOLS)]
+    symbols = list(dict.fromkeys(_valid_symbol(s) for s in (symbols or DEFAULT_SYMBOLS)))
     errors, price_frames, documents = [], [], []
     with ThreadPoolExecutor(max_workers=3) as pool:
         tasks = {pool.submit(download_history, s, start, end): (s, "prices") for s in symbols}
@@ -97,15 +97,18 @@ def fetch_dataset(directory, symbols=None, start="2021-01-01", end=None, profile
     if not price_frames:
         raise DataError("所有行情下载失败。请使用CSV导入；不会生成替代行情。")
     prices = validate_prices(pd.concat(price_frames, ignore_index=True))
-    price_path = directory / "prices.csv"
-    temp = price_path.with_suffix(".csv.part")
-    prices.to_csv(temp, index=False)
-    temp.replace(price_path)
+    # Validate documents before replacing prices so invalid profiles never leave partial writes.
+    docs = None
     if documents:
         doc_frames = [pd.DataFrame(documents)]
         if (directory / "documents.csv").exists():
             doc_frames.append(pd.read_csv(directory / "documents.csv"))
         docs = validate_documents(pd.concat(doc_frames, ignore_index=True).drop_duplicates("doc_id"))
+    price_path = directory / "prices.csv"
+    temp = price_path.with_suffix(".csv.part")
+    prices.to_csv(temp, index=False)
+    temp.replace(price_path)
+    if docs is not None:
         temp = directory / "documents.csv.part"
         docs.to_csv(temp, index=False)
         temp.replace(directory / "documents.csv")
@@ -151,8 +154,10 @@ def download_archived_description(symbol, asof, retries=3):
                 raise
         raise last_exc
 
+    # Align Wikipedia UTC revision cutoff strictly with New York market day end (DST-aware).
+    latest = (cutoff_utc(asof) - pd.Timedelta(seconds=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
     result = request({"action": "query", "prop": "revisions", "titles": WIKI_TITLES[symbol],
-                      "rvprop": "ids|timestamp", "rvstart": str(pd.Timestamp(asof).date()) + "T23:59:59Z", "rvlimit": 1})
+                      "rvprop": "ids|timestamp", "rvstart": latest, "rvlimit": 1})
     page = next(iter(result["query"]["pages"].values()))
     revision = page["revisions"][0]
     parsed = request({"action": "parse", "oldid": revision["revid"], "prop": "text", "disablelimitreport": 1})
@@ -171,9 +176,10 @@ def download_archived_description(symbol, asof, retries=3):
 def archive_documents(directory, asof="2024-12-31", symbols=None):
     import time
 
+    cutoff_utc(asof)
     directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=True)
-    symbols = symbols or DEFAULT_SYMBOLS
+    symbols = list(dict.fromkeys(str(s).strip().upper() for s in (symbols or DEFAULT_SYMBOLS)))
     documents, errors = [], []
     cache = directory / "archive_sources"
     cache.mkdir(exist_ok=True)

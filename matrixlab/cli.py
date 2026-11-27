@@ -48,6 +48,8 @@ def main(argv=None):
     agent_cmd.add_argument("--fixed-alpha", type=float, default=None, help="指定固定收缩系数；默认使用Ledoit-Wolf最优收缩")
     agent_cmd.add_argument("--strategy", choices=["min_var", "erc"], default="min_var", help="组合权重策略：最小方差(min_var)或风险平价(erc)")
     agent_cmd.add_argument("--approve", action="store_true", help="显式批准高风险模拟下单写入SQLite账本")
+    agent_cmd.add_argument("--html-dir", type=Path, default=None, help="可选：导出离线可复查HTML报告目录")
+    agent_cmd.add_argument("--include-holdout", action="store_true", help="可选：在诊断报告中包含样本外对照指标")
     demo = commands.add_parser("demo", help="用真实行情演示矩阵分析、样本外比较及一次模拟建仓")
     demo.add_argument("--asof")
     demo.add_argument("--symbols", nargs="+")
@@ -81,11 +83,15 @@ def main(argv=None):
                 use_ledoit_wolf=args.fixed_alpha is None,
                 strategy=args.strategy,
                 approve_execution=args.approve,
+                include_holdout=args.include_holdout,
             )
             path = trace.save(settings.data_dir / "agent_runs")
+            html_path = trace.export_html_report(args.html_dir) if args.html_dir else None
             result = {"trace_id": trace.trace_id, "strategy": trace.strategy, "selected_symbols": trace.selected_symbols,
                       "approved_execution": trace.approved_execution, "proposed_orders": len(trace.proposed_orders),
                       "fills": len(trace.fills), "record": str(path)}
+            if html_path is not None:
+                result["html_report"] = str(html_path)
         else:
             prices = read_prices(settings.data_dir / "prices.csv")
             days = sorted(prices.date.unique())

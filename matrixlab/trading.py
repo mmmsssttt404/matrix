@@ -75,6 +75,9 @@ class Broker:
     def initialize(self, cash, start_date, commission_bps=10, slippage_bps=5):
         if not np.isfinite(cash) or cash <= 0 or cash > 1e9:
             raise TradingError("初始现金须为0—10亿美元之间的有限正数。")
+        cash_units = _money(cash)
+        if cash_units <= 0:
+            raise TradingError("初始现金小于账本最小精度。")
         if not all(np.isfinite(x) and 0 <= x <= 1000 for x in [commission_bps, slippage_bps]):
             raise TradingError("手续费和滑点须为0—1000bp。")
         start = str(pd.Timestamp(start_date).date())
@@ -82,8 +85,8 @@ class Broker:
             db.execute("BEGIN IMMEDIATE")
             if db.execute("SELECT 1 FROM account").fetchone():
                 raise TradingError("账户已存在；请使用另一个账本文件，不能覆盖既有交易。")
-            db.execute("INSERT INTO account VALUES(1,?,?,?,?,?)", (_money(cash), _money(cash), start, commission_bps, slippage_bps))
-            db.execute("INSERT INTO snapshots VALUES(?,?,0,?)", (start, cash, cash))
+            db.execute("INSERT INTO account VALUES(1,?,?,?,?,?)", (cash_units, cash_units, start, commission_bps, slippage_bps))
+            db.execute("INSERT INTO snapshots VALUES(?,?,0,?)", (start, cash_units / SCALE, cash_units / SCALE))
 
     @staticmethod
     def _snapshot(db, prices, day):
@@ -94,7 +97,8 @@ class Broker:
         for row in rows:
             if row["symbol"] not in marks.index:
                 raise TradingError(f"{day}缺少{row['symbol']}估值行情，未推进账本。")
-            market += _money(marks.at[row["symbol"], "close"]) * row["quantity"]
+            # Round the position value once, not each share's adjusted price.
+            market += _money(Decimal(str(marks.at[row["symbol"], "close"])) * row["quantity"])
         cash = account["cash"] / SCALE
         db.execute("INSERT OR REPLACE INTO snapshots VALUES(?,?,?,?)", (day, cash, market / SCALE, (account["cash"] + market) / SCALE))
         db.execute("UPDATE account SET clock=? WHERE id=1", (day,))
@@ -147,7 +151,12 @@ class Broker:
                 if order.symbol not in quotes.index:
                     raise TradingError(f"下一交易日缺少{order.symbol}开盘价。")
                 factor = Decimal(1) + (Decimal(1) if order.side == "BUY" else Decimal(-1)) * Decimal(str(account["slippage_bps"])) / 10000
-                price = (Decimal(str(quotes.at[order.symbol, "open"])) * factor).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
+                price = Decimal(str(quotes.at[order.symbol, "open"])) * factor
+                if not price.is_finite() or price <= 0:
+                    raise TradingError("成交价格必须为有限正数。")
+                price = price.quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
+                if price <= 0:
+                    raise TradingError("成交价格不能小于成交精度。")
                 notional = price * order.quantity
                 fee = (notional * Decimal(str(account["commission_bps"])) / 10000).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 holding = db.execute("SELECT quantity FROM positions WHERE symbol=?", (order.symbol,)).fetchone()

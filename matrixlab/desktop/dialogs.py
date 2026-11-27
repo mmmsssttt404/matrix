@@ -120,6 +120,7 @@ class ConnectionDialog(QtWidgets.QDialog):
             values["MATRIX_JEVDB_SERVICE_URL"],
             values["MATRIX_JEVDB_SERVICE_TOKEN"],
         )
+        self.workspace.revision += 1
         self.accept()
 
 

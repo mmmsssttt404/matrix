@@ -5,7 +5,7 @@ import time
 
 import numpy as np
 import pandas as pd
-from PySide6 import QtCore, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 import pyqtgraph as pg
 
 from ..agent import RISK_HIGH, run_workflow
@@ -20,11 +20,14 @@ from .widgets import Table, button, label, panel
 
 class ResearchPage(QtWidgets.QWidget):
     apply_selection = QtCore.Signal()
+    state_changed = QtCore.Signal()
 
     def __init__(self, workspace, run_job, parent=None):
         super().__init__(parent)
         self.workspace, self.run_job = workspace, run_job
         self.run = None
+        self._generation = 0
+        self._run_context = None
         layout = QtWidgets.QVBoxLayout(self)
         layout.setContentsMargins(14, 12, 14, 12)
         header = QtWidgets.QHBoxLayout()
@@ -78,7 +81,37 @@ class ResearchPage(QtWidgets.QWidget):
         layout.addWidget(self.table, 1)
         self.mode.currentIndexChanged.connect(self._sync_controls)
         self.jev_op.currentIndexChanged.connect(self._sync_controls)
+        self.query.textChanged.connect(self.invalidate)
+        self.mode.currentIndexChanged.connect(self.invalidate)
+        self.operator.currentIndexChanged.connect(self.invalidate)
+        self.jev_op.currentIndexChanged.connect(self.invalidate)
+        self.threshold.valueChanged.connect(self.invalidate)
+        self.prune_k.valueChanged.connect(self.invalidate)
+        workspace.date_changed.connect(self.invalidate)
+        workspace.changed.connect(self.invalidate)
         self._sync_controls()
+
+    def context(self):
+        return (
+            self._generation,
+            self.workspace.revision,
+            self.workspace.asof,
+            self.query.toPlainText(),
+            self.mode.currentIndex(),
+            self.operator.currentIndex(),
+            self.jev_op.currentIndex(),
+            round(self.threshold.value(), 4),
+            self.prune_k.value(),
+            self.workspace.settings,
+        )
+
+    def invalidate(self, *args):
+        self._generation += 1
+        self.run = self._run_context = None
+        self.apply.setEnabled(False)
+        self.table.replace(pd.DataFrame())
+        self.summary.setText("研究日期、条件或数据已变更，请重新检索公司资料。")
+        self.state_changed.emit()
 
     def _sync_controls(self):
         is_jev = self.mode.currentIndex() == 1
@@ -88,6 +121,7 @@ class ResearchPage(QtWidgets.QWidget):
         self.prune_k.setEnabled(is_jev and self.jev_op.currentIndex() == 4)
 
     def search_now(self):
+        self.invalidate()
         if self.workspace.documents.empty:
             self.summary.setText("工作区没有公司资料。请从“文件”导入资料CSV，或下载课程数据。")
             return
@@ -98,16 +132,23 @@ class ResearchPage(QtWidgets.QWidget):
         jev_op = jev_ops[self.jev_op.currentIndex()]
         threshold = self.threshold.value()
         prune_k = self.prune_k.value() if jev_op == "prune_then_decide" else None
+        context = self.context()
+        docs = self.workspace.documents.copy(deep=True)
+        settings = self.workspace.settings
+        self.summary.setText("正在检索公司资料，完成后可将命中股票加入组合。")
         self.run_job(
             lambda: screen(
-                self.workspace.documents, query, day, self.workspace.settings,
+                docs, query, day, settings,
                 mode, 100, operator, jev_op=jev_op, threshold=threshold, prune_k=prune_k,
             ),
-            self.render,
+            lambda run: self.render(run, context),
         )
 
-    def render(self, run):
+    def render(self, run, context=None):
+        if context is not None and context != self.context():
+            return
         self.run = run
+        self._run_context = context if context is not None else self.context()
         run.save(self.workspace.settings.data_dir / "research_runs")
         rows = []
         for r in run.matches:
@@ -130,17 +171,24 @@ class ResearchPage(QtWidgets.QWidget):
         if run.pruned_from is not None:
             prune_note = (f" · 粗排命中不足，已回退全量({run.inputs})" if run.prune_fallback
                           else f" · 粗排剪枝 {run.pruned_from}→{run.inputs}")
+        usable = len({r["symbol"] for r in run.matches} & set(self.workspace.symbols))
         self.summary.setText(
-            f"{mode} · {run.asof} · 评估{run.inputs}份资料{prune_note} · 命中{len(run.matches)}份 · {run.elapsed_seconds:.2f}秒"
+            f"{mode} · {run.asof} · 评估{run.inputs}份资料{prune_note} · 命中{len(run.matches)}份 / 可用{usable}只 · {run.elapsed_seconds:.2f}秒"
         )
-        self.apply.setEnabled(len({r["symbol"] for r in run.matches} & set(self.workspace.symbols)) >= 2)
+        self.apply.setEnabled(usable >= 2)
+        self.state_changed.emit()
 
     def apply_now(self):
-        if self.run:
-            self.workspace.selected_symbols = sorted({r["symbol"] for r in self.run.matches} & set(self.workspace.symbols))
-            self.workspace.selection_asof = pd.Timestamp(self.run.asof)
-            self.workspace.set_date(self.run.asof)
-            self.apply_selection.emit()
+        if not self.run or self._run_context != self.context():
+            self.invalidate()
+            return
+        symbols = sorted({r["symbol"] for r in self.run.matches} & set(self.workspace.symbols))
+        if len(symbols) < 2:
+            return
+        self.workspace.set_date(self.run.asof)
+        self.workspace.set_selection(symbols, self.run.asof)
+        self.apply_selection.emit()
+        self.state_changed.emit()
 
     def open_source(self, index):
         if self.run and index.row() < len(self.run.matches):
@@ -157,10 +205,12 @@ class ResearchPage(QtWidgets.QWidget):
 
 class PortfolioPage(QtWidgets.QWidget):
     calculated = QtCore.Signal()
+    state_changed = QtCore.Signal()
 
     def __init__(self, workspace, run_job, parent=None):
         super().__init__(parent)
         self.workspace, self.run_job = workspace, run_job
+        self._generation = 0
         layout = QtWidgets.QVBoxLayout(self)
         layout.setContentsMargins(14, 12, 14, 12)
         controls = QtWidgets.QHBoxLayout()
@@ -307,6 +357,20 @@ class PortfolioPage(QtWidgets.QWidget):
         self.alpha.valueChanged.connect(self.invalidate)
         self.use_lw.toggled.connect(self._toggle_lw)
         self.strategy.currentIndexChanged.connect(self._change_strategy)
+        workspace.selection_changed.connect(self.invalidate)
+        workspace.changed.connect(self.invalidate)
+
+    def context(self):
+        return (
+            self._generation,
+            self.workspace.revision,
+            self.workspace.asof,
+            tuple(self.workspace.selected_symbols),
+            self.workspace.selection_asof,
+            self.lookback.value(),
+            round(self.alpha.value(), 4),
+            self.use_lw.isChecked(),
+        )
 
     def _toggle_lw(self, checked):
         self.alpha.setEnabled(not checked)
@@ -317,6 +381,7 @@ class PortfolioPage(QtWidgets.QWidget):
         if self.workspace.risk is not None:
             self._refresh_risk_breakdown(self.workspace.risk)
             self.calculated.emit()
+            self.state_changed.emit()
 
     def _refresh_risk_breakdown(self, risk):
         weights = self.workspace.target_weights
@@ -334,35 +399,50 @@ class PortfolioPage(QtWidgets.QWidget):
         }))
 
     def invalidate(self, *args):
-        self.workspace.risk = None
+        self._generation += 1
+        self.workspace.clear_risk()
         for value in self.stat_values:
             value.setText("—")
+        for tbl in (self.weights, self.risk_table, self.pca_table, self.loadings_table, self.shrink_table, self.perf_table):
+            tbl.replace(pd.DataFrame())
+        self.heat.clear()
+        for side in ("left", "bottom"):
+            self.heat.getAxis(side).setTicks([])
+        self.curve.clear()
+        self.diagnostics.setText("Gram矩阵 / 半正定性 / 协方差收缩 / KKT残差 · 待重新计算")
         self.summary.setText("输入已变更，请重新计算组合。")
+        self.state_changed.emit()
 
     def pick_stocks(self):
         dialog = StockDialog(self.workspace, self)
         if dialog.exec():
-            self.workspace.selected_symbols = dialog.selected
-            self.workspace.selection_asof = None
-            self.invalidate()
+            self.workspace.set_selection(dialog.selected)
 
     def calculate_now(self):
+        self.invalidate()
         day = self.workspace.asof
+        if day is None or len(self.workspace.selected_symbols) < 2:
+            self.summary.setText("请先载入行情，并选择至少两只股票。")
+            return
         if self.workspace.selection_asof is not None and day < self.workspace.selection_asof:
             self.summary.setText("研究日期早于选股资料可用时间，已停止计算。")
             return
         symbols = self.workspace.selected_symbols.copy()
         lookback, alpha, use_lw = self.lookback.value(), self.alpha.value(), self.use_lw.isChecked()
+        prices = self.workspace.prices.copy(deep=True)
+        context = self.context()
 
         def job():
-            risk = analyze(self.workspace.prices, symbols, day, lookback, alpha, use_ledoit_wolf=use_lw)
-            path = shrinkage_path(self.workspace.prices, symbols, day, lookback)
+            risk = analyze(prices, symbols, day, lookback, alpha, use_ledoit_wolf=use_lw)
+            path = shrinkage_path(prices, symbols, day, lookback)
             return day, risk, path
 
-        self.run_job(job, self.render)
+        self.run_job(job, lambda result: self.render(result, context))
 
-    def render(self, result):
+    def render(self, result, context=None):
         day, risk, path = result
+        if context is not None and context != self.context():
+            return
         if day != self.workspace.asof:
             return
         self.workspace.risk, self.workspace.risk_asof = risk, day
@@ -432,6 +512,7 @@ class PortfolioPage(QtWidgets.QWidget):
             self.perf_table.replace(pd.DataFrame())
             self.summary.setText(str(exc))
         self.calculated.emit()
+        self.state_changed.emit()
 
     def run_rolling(self):
         day = self.workspace.asof
@@ -442,13 +523,17 @@ class PortfolioPage(QtWidgets.QWidget):
             return
         symbols = self.workspace.selected_symbols.copy()
         lookback, alpha = self.lookback.value(), self.alpha.value()
+        prices = self.workspace.prices.copy(deep=True)
+        context = self.context()
         self.run_job(
-            lambda: (day, *rolling_holdout_curve(self.workspace.prices, symbols, day, lookback=lookback, alpha=alpha)),
-            self._render_rolling,
+            lambda: (day, *rolling_holdout_curve(prices, symbols, day, lookback=lookback, alpha=alpha)),
+            lambda res: self._render_rolling(res, context),
         )
 
-    def _render_rolling(self, result):
+    def _render_rolling(self, result, context=None):
         day, curve, turnover = result
+        if context is not None and context != self.context():
+            return
         if day != self.workspace.asof:
             return
         self.curve.set_frame(curve)
@@ -479,11 +564,14 @@ class AgentPage(QtWidgets.QWidget):
     """Four-layer Agentic workflow console with explicit human approval gate."""
 
     executed = QtCore.Signal(str)
+    state_changed = QtCore.Signal()
 
     def __init__(self, workspace, run_job, parent=None):
         super().__init__(parent)
         self.workspace, self.run_job = workspace, run_job
         self.trace = None
+        self._generation = 0
+        self.report_path = None
         layout = QtWidgets.QVBoxLayout(self)
         layout.setContentsMargins(14, 12, 14, 12)
 
@@ -521,6 +609,9 @@ class AgentPage(QtWidgets.QWidget):
         self.approve_btn.setEnabled(False)
         actions.addWidget(self.approve_btn)
         actions.addStretch()
+        self.export_html_btn = button("生成可复查 HTML 报告", self.export_html)
+        self.export_html_btn.setEnabled(False)
+        actions.addWidget(self.export_html_btn)
         self.export_btn = button("导出审计轨迹 JSON", self.export_trace)
         self.export_btn.setEnabled(False)
         actions.addWidget(self.export_btn)
@@ -546,7 +637,27 @@ class AgentPage(QtWidgets.QWidget):
         layout.addWidget(splitter, 1)
 
         self.mode.currentIndexChanged.connect(self._sync_controls)
+        self.query.textChanged.connect(self.invalidate)
+        self.mode.currentIndexChanged.connect(self.invalidate)
+        self.operator.currentIndexChanged.connect(self.invalidate)
+        self.jev_op.currentIndexChanged.connect(self.invalidate)
+        self.strategy.currentIndexChanged.connect(self.invalidate)
+        self.use_lw.toggled.connect(self.invalidate)
+        workspace.changed.connect(self.invalidate)
         self._sync_controls()
+
+    def context(self):
+        return (
+            self._generation,
+            self.workspace.revision,
+            self.workspace.asof,
+            self.query.toPlainText(),
+            self.mode.currentIndex(),
+            self.operator.currentIndex(),
+            self.jev_op.currentIndex(),
+            self.strategy.currentIndex(),
+            self.use_lw.isChecked(),
+        )
 
     def _sync_controls(self):
         is_jev = self.mode.currentIndex() == 1
@@ -554,12 +665,19 @@ class AgentPage(QtWidgets.QWidget):
         self.jev_op.setEnabled(is_jev)
 
     def invalidate(self, *args):
+        self._generation += 1
         if self.trace is not None and not self.trace.approved_execution:
             self.trace = None
+            self.report_path = None
             self.approve_btn.setEnabled(False)
             self.export_btn.setEnabled(False)
+            self.export_html_btn.setEnabled(False)
+            self.steps_table.replace(pd.DataFrame())
+            self.orders_table.replace(pd.DataFrame())
+            self.state_changed.emit()
 
     def run_preview(self):
+        self.invalidate()
         if self.workspace.prices.empty or self.workspace.documents.empty:
             self.summary.setText("当前工作区缺少行情或公司资料，请先下载数据或导入 CSV。")
             return
@@ -573,14 +691,18 @@ class AgentPage(QtWidgets.QWidget):
         strategy = "erc" if self.strategy.currentIndex() == 1 else "min_var"
         use_lw = self.use_lw.isChecked()
         broker_path = self.workspace.broker.path
+        prices = self.workspace.prices.copy(deep=True)
+        docs = self.workspace.documents.copy(deep=True)
+        settings = self.workspace.settings
+        context = self.context()
 
         self.run_job(
             lambda: run_workflow(
-                self.workspace.prices,
-                self.workspace.documents,
+                prices,
+                docs,
                 query,
                 day,
-                self.workspace.settings,
+                settings,
                 mode=mode,
                 operator=operator,
                 jev_op=jev_op,
@@ -589,8 +711,9 @@ class AgentPage(QtWidgets.QWidget):
                 strategy=strategy,
                 broker_path=broker_path,
                 approve_execution=False,
+                include_holdout=True,
             ),
-            self.render_trace,
+            lambda trace: self.render_trace(trace, context),
         )
 
     def _summarize_step(self, step):
@@ -612,7 +735,9 @@ class AgentPage(QtWidgets.QWidget):
             return f"已人工审批并原子成交 {s.get('fills_count', 0)} 笔"
         return "等待人工显式审批（未写入 paper.sqlite3）"
 
-    def render_trace(self, trace):
+    def render_trace(self, trace, context=None):
+        if context is not None and context != self.context():
+            return
         self.trace = trace
         trace.save(self.workspace.settings.data_dir / "agent_runs")
         status_map = {
@@ -669,8 +794,10 @@ class AgentPage(QtWidgets.QWidget):
             f"KKT={trace.diagnostics['kkt_complementarity_error']:.2e} · {status_zh}"
         )
         self.export_btn.setEnabled(True)
+        self.export_html_btn.setEnabled(True)
         has_future = bool((self.workspace.prices.date > pd.Timestamp(trace.asof)).any())
         self.approve_btn.setEnabled((not trace.approved_execution) and bool(trace.proposed_orders) and has_future)
+        self.state_changed.emit()
 
     def approve_now(self, confirm=True):
         if self.trace is None or self.trace.approved_execution or not self.trace.proposed_orders:
@@ -722,6 +849,17 @@ class AgentPage(QtWidgets.QWidget):
         self.render_trace(self.trace)
         if fills:
             self.executed.emit(fills[0]["fill_date"])
+
+    def export_html(self, open_browser=True):
+        if not self.trace:
+            return None
+        out_dir = self.workspace.settings.data_dir / "agent_reports" / self.trace.trace_id[:8]
+        html_path = self.trace.export_html_report(out_dir)
+        self.report_path = html_path
+        self.summary.setText(f"离线可复查 HTML 报告已生成：{html_path}")
+        if open_browser and QtWidgets.QApplication.platformName() != "offscreen":
+            QtGui.QDesktopServices.openUrl(QtCore.QUrl.fromLocalFile(str(html_path.resolve())))
+        return html_path
 
     def export_trace(self):
         if not self.trace:

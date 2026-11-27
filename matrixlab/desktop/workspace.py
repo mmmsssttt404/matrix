@@ -15,6 +15,7 @@ class Workspace(QtCore.QObject):
     changed = QtCore.Signal()
     symbol_changed = QtCore.Signal(str)
     date_changed = QtCore.Signal()
+    selection_changed = QtCore.Signal()
 
     def __init__(self, settings=None):
         super().__init__()
@@ -30,6 +31,7 @@ class Workspace(QtCore.QObject):
         self.documents = pd.DataFrame(columns=DOC_COLUMNS)
         self.symbol = ""
         self.asof = None
+        self.revision = 0
         self.risk = None
         self.risk_asof = None
         self.risk_strategy = "min_var"
@@ -64,15 +66,31 @@ class Workspace(QtCore.QObject):
         else:
             self.symbols, self.days = [], []
         self.risk = None
+        self.risk_asof = None
+        self.revision += 1
         self.changed.emit()
+
+    def clear_risk(self):
+        self.risk = None
+        self.risk_asof = None
+
+    def set_selection(self, symbols, asof=None):
+        self.selected_symbols = sorted(symbols)
+        self.selection_asof = pd.Timestamp(asof).normalize() if asof is not None else None
+        self.clear_risk()
+        self.selection_changed.emit()
 
     def select(self, symbol):
         self.symbol = symbol
         self.symbol_changed.emit(symbol)
 
     def set_date(self, date):
-        self.asof = pd.Timestamp(date).normalize()
-        self.risk = None
+        normalized = pd.Timestamp(date).normalize()
+        if self.asof == normalized:
+            return
+        self.asof = normalized
+        self.clear_risk()
+        self.revision += 1
         self.date_changed.emit()
 
     def series(self):

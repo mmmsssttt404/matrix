@@ -110,6 +110,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.progress.setRange(0, 0)
         self.progress.hide()
         layout.addWidget(self.progress)
+        self.workflow = label("", "muted")
+        self.workflow.setObjectName("workflowStatus")
+        self.workflow.setWordWrap(True)
+        self.workflow.setStyleSheet("padding:6px 17px;background:#172033;color:#b9c8df;")
+        layout.addWidget(self.workflow)
         horizontal = QtWidgets.QSplitter(QtCore.Qt.Orientation.Horizontal)
         horizontal.setChildrenCollapsible(False)
         self.watch_panel, watch = panel()
@@ -141,10 +146,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.market = self.build_market()
         self.research = ResearchPage(self.workspace, self.run_job)
         self.research.apply_selection.connect(lambda: self.navigate(2))
+        self.research.state_changed.connect(self.refresh_workflow)
         self.portfolio = PortfolioPage(self.workspace, self.run_job)
         self.portfolio.calculated.connect(self.refresh_account)
+        self.portfolio.state_changed.connect(self.refresh_account)
+        self.portfolio.state_changed.connect(self.refresh_workflow)
         self.agent = AgentPage(self.workspace, self.run_job)
         self.agent.executed.connect(self.on_agent_executed)
+        self.agent.state_changed.connect(self.refresh_workflow)
         for page in [self.market, self.research, self.portfolio, self.agent]:
             self.pages.addWidget(page)
         center.addWidget(self.pages)
@@ -318,6 +327,27 @@ class MainWindow(QtWidgets.QMainWindow):
         self.refresh_watch()
         self.refresh_symbol()
         self.refresh_account()
+        self.refresh_workflow()
+
+    def refresh_workflow(self):
+        ws = self.workspace
+        if ws.prices.empty:
+            self.workflow.setText("① 准备数据 → ② 公司研究 → ③ 矩阵组合 → ④ Agent/模拟交易 | 下一步：下载课程历史数据或导入行情与资料 CSV。")
+            return
+        backend = self.research.run.backend if self.research.run else ("JEVDB语义" if self.research.mode.currentIndex() == 1 else "离线BM25")
+        if self.agent.trace is not None and self.agent.trace.approved_execution:
+            hint = f"Agent 工作流已人工批准并原子成交（Trace {self.agent.trace.trace_id[:8]}），可导出离线 HTML 报告或推进交易日。"
+        elif self.agent.trace is not None:
+            hint = f"Agent 预览就绪（{len(self.agent.trace.proposed_orders)}笔提案，零落盘），核对后可点击“人工批准并执行撮合”或生成 HTML 报告。"
+        elif ws.risk is not None and not ws.broker.exists():
+            hint = f"组合已就绪（{ws.strategy_label} · α={ws.risk.alpha:.3f} · KKT={ws.risk.kkt_complementarity_error:.1e}）；可在右侧创建同日模拟账户后调仓，或前往 Agent 工作流。"
+        elif ws.risk is not None:
+            hint = f"组合已就绪（{ws.strategy_label}），研究日与模拟账户对齐时可点击右侧“按组合目标调仓…”。"
+        elif self.research.run is not None and self.research.apply.isEnabled():
+            hint = "研究筛选已完成，点击“加入组合研究”进入矩阵风控，或前往第 4 页运行端到端 Agent 工作流。"
+        else:
+            hint = "前往“公司研究”按研究日截断筛选公司，或直接进入“Agent工作流”一键运行四层编排预览。"
+        self.workflow.setText(f"① 公司研究 ({backend}) → ② 矩阵组合 ({ws.strategy_label}) → ③ Agent 四层审批 / SQLite 原子交易 | 下一步：{hint}")
 
     def refresh_watch(self):
         frame = self.workspace.quotes()

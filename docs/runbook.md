@@ -1,6 +1,6 @@
 # 运行说明与完整演示手册
 
-**主交付是 Qt 原生桌面版（四大工作台：行情工作台 / 公司研究 / 矩阵组合 / Agent 工作流）。** Windows 用户解压发行包 `MatrixWorkbench-Windows-x64-v0.3.0.zip` 后，保留同目录 `_internal/` 文件夹，直接双击 `MatrixWorkbench.exe`（或 `start-windows.cmd`）运行，无需安装 Python；源码启动：
+**主交付是 Qt 原生桌面版（四大工作台：行情工作台 / 公司研究 / 矩阵组合 / Agent 工作流，配备实时流程引导条与离线 HTML 报告导出）。** Windows 用户解压发行包 `MatrixWorkbench-Windows-x64-v0.4.0.zip` 后，保留同目录 `_internal/` 文件夹，直接双击 `MatrixWorkbench.exe`（或 `start-windows.cmd`）运行，无需安装 Python；Windows 源码用户可在仓库根目录执行 `.\scripts\start-windows.ps1` 一键建环并启动；Linux/macOS 源码启动：
 
 ```bash
 python3 -m venv .venv
@@ -18,7 +18,7 @@ python3 -m venv .venv
    - **权重与协方差**：对比只做多 QP、无约束闭式解与 Spinu 凸风险平价（ERC），查看欧拉风险分解、年化协方差热力图与 KKT 互补松弛残差（`~3.96e-9`）；可随时切换顶部“调仓目标”为 `最小方差(QP)` 或 `风险平价(ERC)`，并导出多列完整权重诊断 CSV；
    - **PCA 与收缩路径**：查看相关系数矩阵 PCA 解释方差/前 3 主成分载荷，以及 $\alpha \in [0, 1]$ 上条件数与收缩后最小特征值 $\lambda_{\min}(\Sigma_\alpha)$ 的单调演化；
    - **样本外与滚动回测**：点击“运行月度滚动对比(含ERC与LW)”，对比 21 次月度调仓的累计收益、夏普比率与年化换手率。
-4. **四层 Agent 编排与人工审批撮合（Agent 工作流，`Ctrl+4`）**：输入自然语言研究需求，选择目标策略（`最小方差(QP)` 或 `风险平价(ERC)`）并点击“运行四层工作流（预览）”。界面按 `Preamble → Plan → Retrieve → Risk → Proposal` 逐行展示 5 步轨迹、Skill 名称、耗时与风险等级（`LOW_AUTO` / `MEDIUM_CONFIRM` / `HIGH_EXPLICIT_APPROVAL`），此时严格只读、不改写 `paper.sqlite3`。核对调仓提案无误后，点击“人工批准并执行撮合”并在二次确认弹窗点选确认，系统立即按所见即所得清单在 SQLite `BEGIN IMMEDIATE` 原子事务中以次日复权开盘价撮合，自动推进模拟日期、刷新右侧账户权益与底部成交表，并支持导出审计轨迹 JSON。
+4. **四层 Agent 编排、离线 HTML 报告与人工审批撮合（Agent 工作流，`Ctrl+4`）**：输入自然语言研究需求，选择目标策略（`最小方差(QP)` 或 `风险平价(ERC)`）并点击“运行四层工作流（预览）”。界面按 `Preamble → Plan → Retrieve → Risk → Proposal` 逐行展示 5 步轨迹、Skill 名称、耗时与风险等级（`LOW_AUTO` / `MEDIUM_CONFIRM` / `HIGH_EXPLICIT_APPROVAL`），此时严格只读、不改写 `paper.sqlite3`。可点击 **“生成可复查 HTML 报告”** 导出完全离线的自包含演示报告（`report.html` + `trace.json`）；核对调仓提案无误后，点击“人工批准并执行撮合”并在二次确认弹窗点选确认，系统立即按所见即所得清单在 SQLite `BEGIN IMMEDIATE` 原子事务中以次日复权开盘价撮合，自动推进模拟日期、刷新右侧账户权益与底部成交表。修改任意筛选条件或风控参数后，旧结果会自动失效，防止误用过期权重。
 
 ## Streamlit 调试对照界面（Linux / 开发环境）
 
@@ -46,7 +46,7 @@ TMPDIR="$PWD/.cache/tmp" PIP_CACHE_DIR="$PWD/.cache/pip" .venv/bin/python -m pip
 .venv/bin/python -m matrixlab.cli demo --asof 2025-01-27
 .venv/bin/python -m matrixlab.cli research 'cloud software' --asof 2025-01-27 --mode keyword --operator all
 .venv/bin/python -m matrixlab.cli research 'cloud computing' --asof 2025-01-27 --mode jevdb --jev-op prune_then_decide --prune-k 3
-.venv/bin/python -m matrixlab.cli agent 'cloud software' --asof 2025-01-27 --mode keyword --operator any --strategy erc
+.venv/bin/python -m matrixlab.cli agent 'cloud software' --asof 2025-01-27 --mode keyword --operator any --strategy erc --include-holdout --html-dir demo-report
 .venv/bin/python -m matrixlab.cli agent 'cloud software' --asof 2025-01-27 --mode keyword --operator any --strategy erc --approve
 .venv/bin/python evaluation/evaluate.py --mode keyword --operator all
 .venv/bin/python evaluation/evaluate.py --mode prune_ablation
